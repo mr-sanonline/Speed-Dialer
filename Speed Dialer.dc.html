@@ -30,10 +30,17 @@ input:focus,select:focus,textarea:focus{outline:2px solid #0B6E3F;outline-offset
       <div style="width:46px;height:46px;border-radius:12px;background:#0B6E3F"></div>
       <div style="font-size:34px;font-weight:700;letter-spacing:-1.2px;line-height:1.05;margin-top:26px">Speed Dialer</div>
       <div style="font-size:16px;line-height:1.45;opacity:.55;margin-top:10px;max-width:280px">Tele-calling for farm land, primary, secondary, pre-launch and mandate plotted.</div>
-      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.45;margin:34px 0 12px">WHO'S CALLING?</div>
-      <div style="display:flex;flex-direction:column;gap:9px">
-        <sc-for list="{{ teamPick }}" as="m" hint-placeholder-count="5">
-          <button onClick="{{ m.onClick }}" style="{{ m.style }}">{{ m.label }}</button>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.45;margin:34px 0 14px">WHO'S CALLING?</div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <sc-for list="{{ teamGroups }}" as="g" hint-placeholder-count="4">
+          <div>
+            <div style="font-size:12.5px;font-weight:700;color:#0B6E3F;margin-bottom:9px">{{ g.vertical }}</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ g.members }}" as="m" hint-placeholder-count="2">
+                <button onClick="{{ m.onClick }}" style="{{ m.style }}">{{ m.label }}</button>
+              </sc-for>
+            </div>
+          </div>
         </sc-for>
       </div>
       <div style="height:1px;background:rgba(0,0,0,.1);margin:26px 0 20px"></div>
@@ -251,7 +258,7 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
             <div>
               <div style="font-size:27px;font-weight:700;letter-spacing:-.9px">Team today</div>
-              <div style="font-size:14px;opacity:.5;margin-top:4px">Thu 18 Sep · 5 callers</div>
+              <div style="font-size:14px;opacity:.5;margin-top:4px">{{ mgrSubhead }}</div>
             </div>
             <button onClick="{{ onOpenSettings }}" style="padding:10px 13px;border:1px solid rgba(0,0,0,.2);background:transparent;border-radius:9px;font-size:13.5px;font-weight:600">Settings</button>
           </div>
@@ -370,7 +377,16 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:920},&quot;managerPin&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;1947&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Access&quot;},&quot;requireOutcome&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Calling flow&quot;},&quot;flagDuplicates&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Calling flow&quot;}}">
-const NAMES = ["Priya S.","Karthik M.","Anjali R.","Suresh B.","Fatima Z."];
+const TEAM = [
+  "Priyanka (Farm land)","Chaitra (Farm land)",
+  "Kavya (Pre-launch)","Sujan (Pre-launch)","Kaushik (Pre-launch)",
+  "Deepika (Mandate plotted)","Kushal (Mandate plotted)","Anitha (Mandate plotted)","Harish (Mandate plotted)",
+  "Sania (Primary market)","Imram (Primary market)"
+];
+const parseMember = (entry) => {
+  const m = /^(.*?)\s*\((.*)\)\s*$/.exec(entry);
+  return m ? { name: m[1], vertical: m[2] } : { name: entry, vertical: "" };
+};
 const LEAD_SEED = [
   ["Ravi Kumar","+91 98450 11234"],["Sneha Reddy","+91 99012 44781"],["Mohan Rao","+91 90080 23119"],
   ["Ayesha Khan","+91 88617 90224"],["Vikram Shetty","+91 97411 55830"],["Lakshmi Iyer","+91 93412 77190"],
@@ -391,20 +407,21 @@ class Component extends DCLogic {
     })),
     target: 200,
     settings: {
-      team: NAMES.slice(),
+      team: TEAM.slice(),
       verticals: ["Farm land","Primary market","Secondary market","Pre-launch","Mandate plotted"],
       ptypes: ["Apartment","Villa / independent house","Plot","Farm plot"],
       budgets: ["under ₹50L","₹50L–1Cr","₹1–2Cr","₹2–5Cr","₹5Cr+"],
       outcomes: ["Interested","Call back later","No answer","Switched off","Not interested"],
       langs: ["Kannada","Telugu","Tamil","Hindi","English"],
       templates: ["Hi, I am {caller}. Sharing details of the project as discussed.","Hi {name}, thanks for your time. Sending the price sheet and location map."],
-      projects: ["Green Acres Phase 2","Palm Grove Farms","Lakeview Enclave","Sunrise Heights","Nandi Valley Plots"],
+      projects: [],
       sheets: ["Farm land — Sheet A","Pre-launch — Sheet 3","Secondary — North"]
     },
     drafts: {}
   };
 
-  KEY = "speedDialer.v1";
+  KEY = "speedDialer.v2";
+  hydrated = false;
 
   componentDidMount() {
     try {
@@ -420,8 +437,10 @@ class Component extends DCLogic {
         }));
       }
     } catch (e) {}
+    this.hydrated = true;
   }
   persist() {
+    if (!this.hydrated) return;
     try {
       const { screen, tab, caller, isManager, vertical, leads, target, settings } = this.state;
       localStorage.setItem(this.KEY, JSON.stringify({ screen, tab, caller, isManager, vertical, leads, target, settings }));
@@ -474,6 +493,7 @@ class Component extends DCLogic {
       ["budgets", "BUDGET BANDS", "Add a band"],
       ["outcomes", "OUTCOME BUTTONS", "Add an outcome"],
       ["langs", "LANGUAGES", "Add a language"],
+      ["projects", "PROJECT SUGGESTIONS", "Add a project name"],
       ["templates", "WHATSAPP TEMPLATES", "Add a message"],
       ["sheets", "SHEET LINKS PER TEAM", "Paste a sheet link"]
     ];
@@ -481,7 +501,20 @@ class Component extends DCLogic {
     const outcomeColor = (label) =>
       label === "Interested" ? "#0B6E3F" : label === "Not interested" ? "#C4361A" : "#141414";
 
-    const mgrNames = S.settings.team;
+    const mgrNames = S.settings.team.map(parseMember);
+    const mgrRows = mgrNames.map((m, i) => {
+      const seed = m.name.split("").reduce((t, c) => t + c.charCodeAt(0), 0);
+      const calls = 40 + seed % 145;
+      return {
+        name: m.name, vertical: m.vertical || "Unassigned", calls,
+        connected: Math.round(calls * (0.28 + (seed % 23) / 100)),
+        left: 70 + (seed * 7) % 210
+      };
+    });
+    const sum = (arr, k) => arr.reduce((t, r) => t + r[k], 0);
+    const totalCalls = sum(mgrRows, "calls");
+    const totalConnected = sum(mgrRows, "connected");
+    const fmt = (n) => n.toLocaleString("en-IN");
 
     return {
       statusRight: S.screen === "app" ? `${S.vertical} · ${S.caller || ""}` : "no install needed",
@@ -497,10 +530,27 @@ class Component extends DCLogic {
       onManagerEnter: () => S.pin === (this.props.managerPin ?? "1947")
         ? set({ isManager: true, caller: "Manager", screen: "app", tab: "manager", pin: "", pinError: false })
         : set({ pinError: true }),
-      teamPick: S.settings.team.map(label => ({
-        label, style: this.rowBtn(S.caller === label),
-        onClick: () => set({ caller: label, screen: "load" })
-      })),
+      teamGroups: (() => {
+        const parsed = S.settings.team.map(parseMember);
+        const order = S.settings.verticals.concat(
+          parsed.map(p => p.vertical).filter(v => v && !S.settings.verticals.includes(v))
+        );
+        return order.map(v => ({
+          vertical: v,
+          members: parsed.filter(p => p.vertical === v).map(p => ({
+            label: p.name, style: this.rowBtn(S.caller === p.name),
+            onClick: () => set({ caller: p.name, vertical: v || S.vertical, screen: "load" })
+          }))
+        })).filter(g => g.members.length).concat(
+          parsed.some(p => !p.vertical) ? [{
+            vertical: "Unassigned",
+            members: parsed.filter(p => !p.vertical).map(p => ({
+              label: p.name, style: this.rowBtn(S.caller === p.name),
+              onClick: () => set({ caller: p.name, screen: "load" })
+            }))
+          }] : []
+        );
+      })(),
       onBackToOnboard: () => set({ screen: "onboard", caller: null }),
       onGoogle: () => set({ sheetUrl: "drive.google.com › Leads › " + S.vertical + " — Sheet 3" }),
       sheetUrl: S.sheetUrl, onSheetUrl: (e) => set({ sheetUrl: e.target.value }),
@@ -519,7 +569,9 @@ class Component extends DCLogic {
       },
       noResults: visible.length === 0,
       ptypeOptions: S.settings.ptypes,
-      projectOptions: S.settings.projects,
+      projectOptions: Array.from(new Set(
+        S.settings.projects.concat(S.leads.map(l => l.f.project.trim()).filter(Boolean))
+      )),
 
       leads: visible.map(({ l, i }) => ({
         name: l.name, phone: l.phone, called: l.called,
@@ -595,32 +647,32 @@ class Component extends DCLogic {
       onEndShift: () => set({ tab: "leads", filter: "Called" }),
 
       mgrTiles: [
-        { value: "312", label: "Calls made today" },
-        { value: "41%", label: "Connect rate" },
-        { value: "18", label: "Follow-ups due" },
-        { value: "926", label: "Leads remaining" }
+        { value: fmt(totalCalls), label: "Calls made today" },
+        { value: (totalCalls ? Math.round(totalConnected / totalCalls * 100) : 0) + "%", label: "Connect rate" },
+        { value: 3, label: "Follow-ups due" },
+        { value: fmt(sum(mgrRows, "left")), label: "Leads remaining" }
       ],
-      mgrTeam: mgrNames.map((name, i) => {
-        const calls = [182, 147, 96, 64, 41][i % 5];
-        return {
-          name, calls, width: Math.min(100, calls / target * 100).toFixed(1) + "%",
-          connect: ["46%", "39%", "51%", "28%", "35%"][i % 5],
-          vertical: S.settings.verticals[i % S.settings.verticals.length],
-          left: [118, 203, 87, 246, 272][i % 5]
-        };
-      }),
-      mgrVerticals: S.settings.verticals.map((name, i) => ({
-        name, calls: [74, 96, 52, 61, 29][i % 5], hot: [9, 14, 5, 11, 3][i % 5]
+      mgrTeam: mgrRows.map(r => ({
+        name: r.name, calls: r.calls, vertical: r.vertical, left: r.left,
+        width: Math.min(100, r.calls / target * 100).toFixed(1) + "%",
+        connect: Math.round(r.connected / r.calls * 100) + "%"
       })),
+      mgrSubhead: new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) +
+        " · " + mgrNames.length + (mgrNames.length === 1 ? " caller" : " callers"),
+      mgrVerticals: S.settings.verticals.map(name => {
+        const rows = mgrRows.filter(r => r.vertical === name);
+        const calls = sum(rows, "calls");
+        return { name, calls, hot: Math.round(sum(rows, "connected") * 0.22) };
+      }),
       hotLeads: [
-        { name: "Ayesha Khan", by: "Priya S.", detail: "Villa · 4BHK · ₹2–5Cr · Whitefield · site visit Sunday" },
-        { name: "Girish Patil", by: "Karthik M.", detail: "Farm plot · 2 acre · ₹1–2Cr · Kanakapura Road" },
-        { name: "Tejas Bhat", by: "Anjali R.", detail: "Plot · 30x40 · under ₹50L · Nandi Valley Plots" }
+        { name: "Ayesha Khan", by: "Kavya", detail: "Villa · 4BHK · ₹2–5Cr · Whitefield · site visit Sunday" },
+        { name: "Girish Patil", by: "Priyanka", detail: "Farm plot · 2 acre · ₹1–2Cr · Kanakapura Road" },
+        { name: "Tejas Bhat", by: "Deepika", detail: "Plot · 30x40 · under ₹50L · north corridor" }
       ],
       followUps: [
-        { name: "Mohan Rao", when: "Today 4:00pm", by: "Suresh B." },
-        { name: "Deepa Nair", when: "Tomorrow", by: "Priya S." },
-        { name: "Arun Prasad", when: "Sat 20 Sep", by: "Fatima Z." }
+        { name: "Mohan Rao", when: "Today 4:00pm", by: "Sujan" },
+        { name: "Deepa Nair", when: "Tomorrow", by: "Sania" },
+        { name: "Arun Prasad", when: "Sat 20 Sep", by: "Harish" }
       ],
 
       targetInput: String(S.target),
@@ -647,7 +699,7 @@ class Component extends DCLogic {
       onOpenSettings: () => set({ tab: "settings" }),
       onCloseSettings: () => set({ tab: "manager" }),
       onSignOut: () => {
-        try { localStorage.removeItem(this.KEY); } catch (e) {}
+        try { localStorage.removeItem(this.KEY); localStorage.removeItem("speedDialer.v1"); } catch (e) {}
         set({ screen: "onboard", caller: null, isManager: false, tab: "leads", sheetUrl: "" });
       },
 
