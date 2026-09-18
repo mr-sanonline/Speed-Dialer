@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#EDEAE4;font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}a{color:#0B6E3F}a:hover{color:#08542f}</style></helmet>
+<div style="display:flex;justify-content:center;padding:28px 16px">
+<div style="width:390px;height:844px;background:#FAF8F4;border-radius:38px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;color:#141414">
+  <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600;letter-spacing:.2px"><span>9:41</span><span style="opacity:.55">Pre-launch · Sheet 3</span></div>
+  <div style="padding:8px 18px 14px;border-bottom:1px solid rgba(0,0,0,.09)">
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <div style="font-size:30px;font-weight:700;letter-spacing:-.8px">{{ doneCount }}<span style="font-size:17px;font-weight:500;opacity:.45">/{{ total }}</span></div>
+      <div style="font-size:12px;font-weight:600;color:#0B6E3F;letter-spacing:.4px">CALLED TODAY</div>
+    </div>
+    <div style="height:5px;background:rgba(0,0,0,.09);border-radius:3px;margin-top:10px;overflow:hidden"><div style="height:100%;width:{{ pct }};background:#0B6E3F"></div></div>
+    <div style="display:flex;gap:8px;margin-top:13px">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+        <button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto">
+    <sc-for list="{{ leads }}" as="lead" hint-placeholder-count="8">
+      <div style="border-bottom:1px solid rgba(0,0,0,.07)">
+        <div style="display:flex;align-items:center;gap:12px;padding:13px 18px;background:{{ lead.rowBg }}">
+          <div onClick="{{ lead.onExpand }}" style="flex:1;min-width:0;cursor:pointer">
+            <div style="display:flex;align-items:center;gap:7px">
+              <div style="font-size:17px;font-weight:600;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ lead.name }}</div>
+              <sc-if value="{{ lead.dupe }}" hint-placeholder-val="{{ false }}"><span style="font-size:9px;font-weight:700;letter-spacing:.6px;padding:2px 5px;border:1px solid #C4361A;color:#C4361A;border-radius:3px">DUPE</span></sc-if>
+              <sc-if value="{{ lead.doneMark }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:#0B6E3F;font-weight:700">✓</span></sc-if>
+            </div>
+            <div style="font-size:15px;font-variant-numeric:tabular-nums;opacity:.6;margin-top:2px">{{ lead.phone }}</div>
+          </div>
+          <a href="{{ lead.tel }}" style="width:52px;height:52px;border-radius:26px;background:#0B6E3F;display:flex;align-items:center;justify-content:center;text-decoration:none;flex:none" onClick="{{ lead.onCall }}">
+            <span style="display:block;width:19px;height:19px;border-radius:5px;border:2.5px solid #FAF8F4;border-top-width:7px;transform:rotate(-32deg)"></span>
+          </a>
+        </div>
+        <sc-if value="{{ lead.open }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:2px 18px 18px;display:flex;flex-direction:column;gap:12px;background:#F3F0E9">
+            <div style="display:flex;gap:10px">
+              <div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:.7px;opacity:.5;margin-bottom:5px">PREFERRED LOCATION</div><input placeholder="Type area" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font-size:15px;background:#FAF8F4;font-family:inherit"></div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:.7px;opacity:.5;margin-bottom:5px">PROPERTY TYPE</div>
+                <select style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font-size:15px;background:#FAF8F4;font-family:inherit;appearance:none"><option>Apartment</option><option>Villa / independent house</option><option>Plot</option><option>Farm plot</option></select></div>
+              <div style="flex:1"><div style="font-size:10px;font-weight:700;letter-spacing:.7px;opacity:.5;margin-bottom:5px">CONFIGURATION</div><input placeholder="2BHK, 30x40…" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font-size:15px;background:#FAF8F4;font-family:inherit"></div>
+            </div>
+            <div><div style="font-size:10px;font-weight:700;letter-spacing:.7px;opacity:.5;margin-bottom:5px">BUDGET</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ budgets }}" as="b" hint-placeholder-count="5"><div style="padding:8px 11px;border:1px solid rgba(0,0,0,.18);border-radius:18px;font-size:13px;font-weight:500">{{ b }}</div></sc-for></div>
+            </div>
+            <div><div style="font-size:10px;font-weight:700;letter-spacing:.7px;opacity:.5;margin-bottom:5px">NOTES — ONE PER LINE</div><textarea rows="3" placeholder="Wants east facing&#10;Loan pre-approved" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(0,0,0,.18);border-radius:8px;font-size:15px;background:#FAF8F4;font-family:inherit;resize:none"></textarea></div>
+            <div style="display:flex;gap:9px"><button style="flex:1;padding:14px;border:none;border-radius:9px;background:#0B6E3F;color:#FAF8F4;font-size:15px;font-weight:600;font-family:inherit">Save · synced</button><button style="padding:14px 16px;border:1px solid rgba(0,0,0,.2);border-radius:9px;background:transparent;font-size:15px;font-weight:600;font-family:inherit">WhatsApp</button></div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+  <div style="border-top:1px solid rgba(0,0,0,.09);padding:11px 18px 22px;display:flex;gap:10px;align-items:center;background:#FAF8F4">
+    <input placeholder="Search name or number" style="flex:1;padding:12px 13px;border:1px solid rgba(0,0,0,.16);border-radius:9px;font-size:15px;background:#F3F0E9;font-family:inherit;box-sizing:border-box">
+    <button onClick="{{ onNext }}" style="padding:13px 15px;border:none;border-radius:9px;background:#141414;color:#FAF8F4;font-size:14px;font-weight:600;font-family:inherit;white-space:nowrap">Next ↓</button>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = {
+    filter: "Uncalled", open: 1,
+    leads: [
+      {name:"Ravi Kumar", phone:"+91 98450 11234", done:false},
+      {name:"Sneha Reddy", phone:"+91 99012 44781", done:false, dupe:true},
+      {name:"Mohan Rao", phone:"+91 90080 23119", done:true},
+      {name:"Ayesha Khan", phone:"+91 88617 90224", done:false},
+      {name:"Vikram Shetty", phone:"+91 97411 55830", done:false},
+      {name:"Lakshmi Iyer", phone:"+91 93412 77190", done:true},
+      {name:"Arun Prasad", phone:"+91 99860 30442", done:false},
+      {name:"Deepa Nair", phone:"+91 98803 61257", done:false}
+    ]
+  };
+  fstyle(active) {
+    return `padding:8px 13px;border-radius:19px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid ${active?"#0B6E3F":"rgba(0,0,0,.18)"};background:${active?"#0B6E3F":"transparent"};color:${active?"#FAF8F4":"#141414"}`;
+  }
+  renderVals() {
+    const total = 200, done = 47;
+    return {
+      total, doneCount: done, pct: (done/total*100).toFixed(1)+"%",
+      budgets: ["under ₹50L","₹50L–1Cr","₹1–2Cr","₹2–5Cr","₹5Cr+"],
+      filters: ["Uncalled","Called","Follow-up"].map(label => ({
+        label, style: this.fstyle(this.state.filter===label),
+        onClick: () => this.setState({filter: label})
+      })),
+      leads: this.state.leads.map((l,i) => ({
+        name: l.name, phone: l.phone, dupe: !!l.dupe, doneMark: l.done,
+        tel: "tel:"+l.phone.replace(/\s/g,""),
+        open: this.state.open===i,
+        rowBg: this.state.open===i ? "#F3F0E9" : "transparent",
+        onExpand: () => this.setState({open: this.state.open===i ? -1 : i}),
+        onCall: () => this.setState({open: i})
+      })),
+      onNext: () => {
+        const i = this.state.leads.findIndex(l => !l.done);
+        this.setState({open: i});
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
