@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><script src="./doc-page.js"></script><style>
+body{margin:0}doc-page:not(:defined){visibility:hidden}
+a{color:#0B6E3F}a:hover{color:#08542f}
+</style></helmet>
+<doc-page margin="0.7in">
+  <div style="font-family:Helvetica,Arial,sans-serif;color:#141414;line-height:1.5">
+    <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #0B6E3F;padding-bottom:12px">
+      <div style="width:30px;height:30px;border-radius:8px;background:#0B6E3F;flex:none"></div>
+      <div>
+        <div style="font-size:22pt;font-weight:700;letter-spacing:-.6px;line-height:1.1">Speed Dialer</div>
+        <div style="font-size:10.5pt;color:#555">One-page guide for the tele-calling team</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:20px">
+      <div>
+        <div style="font-size:11pt;font-weight:700;color:#0B6E3F;letter-spacing:.5px">1 · OPEN IT ONCE</div>
+        <p style="font-size:10.5pt;margin:7px 0 0">Open <strong>mr-sanonline.github.io/Speed-Dialer</strong> in Chrome or Safari. Nothing to install.</p>
+        <p style="font-size:10.5pt;margin:7px 0 0">Then add it to your home screen so it opens like an app:</p>
+        <ul style="font-size:10.5pt;margin:6px 0 0;padding-left:18px">
+          <li>iPhone — Share button, then <strong>Add to Home Screen</strong></li>
+          <li>Android — ⋮ menu, then <strong>Add to Home screen</strong></li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11pt;font-weight:700;color:#0B6E3F;letter-spacing:.5px">2 · SIGN IN</div>
+        <p style="font-size:10.5pt;margin:7px 0 0">Tap your name under your team. Your leads load automatically — you only see the ones assigned to you, so nobody double-calls.</p>
+        <p style="font-size:10.5pt;margin:7px 0 0">You stay signed in. Closing the browser is fine; you come back where you left off.</p>
+      </div>
+    </div>
+
+    <div style="height:1px;background:#ddd;margin:22px 0"></div>
+
+    <div style="font-size:11pt;font-weight:700;color:#0B6E3F;letter-spacing:.5px">3 · MAKE A CALL</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:10px">
+      <div style="background:#F3F0E9;border-radius:8px;padding:12px">
+        <div style="font-size:9.5pt;font-weight:700;color:#0B6E3F">TAP THE GREEN BUTTON</div>
+        <p style="font-size:10pt;margin:5px 0 0">The number dials straight away. No typing.</p>
+      </div>
+      <div style="background:#F3F0E9;border-radius:8px;padding:12px">
+        <div style="font-size:9.5pt;font-weight:700;color:#0B6E3F">PICK THE OUTCOME</div>
+        <p style="font-size:10pt;margin:5px 0 0">When you come back, choose Interested, Call back later, No answer, Switched off, or Not interested.</p>
+      </div>
+      <div style="background:#F3F0E9;border-radius:8px;padding:12px">
+        <div style="font-size:9.5pt;font-weight:700;color:#0B6E3F">FILL WHAT YOU LEARNED</div>
+        <p style="font-size:10pt;margin:5px 0 0">Location, property type, configuration, budget, project, timeline, follow-up date, language, notes. All optional.</p>
+      </div>
+      <div style="background:#F3F0E9;border-radius:8px;padding:12px">
+        <div style="font-size:9.5pt;font-weight:700;color:#0B6E3F">SAVE</div>
+        <p style="font-size:10pt;margin:5px 0 0">Goes into the master sheet by itself. Tap <strong>Next ↓</strong> for the next uncalled lead.</p>
+      </div>
+    </div>
+
+    <div style="height:1px;background:#ddd;margin:22px 0"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
+      <div>
+        <div style="font-size:11pt;font-weight:700;color:#0B6E3F;letter-spacing:.5px">GOOD TO KNOW</div>
+        <ul style="font-size:10.5pt;margin:8px 0 0;padding-left:18px">
+          <li><strong>Always pick an outcome.</strong> A call without one doesn't count towards your 200 and shows up as "attempted, not logged".</li>
+          <li><strong>Notes: one line per point.</strong> Each line becomes its own bullet.</li>
+          <li><strong>Configuration is free text</strong> — 2BHK, 30x40, 2 acres, whatever fits.</li>
+          <li><strong>DUPE badge</strong> means that number is in the sheet twice. Call once, then move on.</li>
+          <li><strong>WhatsApp button</strong> opens a chat with a ready message.</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:11pt;font-weight:700;color:#0B6E3F;letter-spacing:.5px">THE DOT AT THE BOTTOM</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:9px">
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <span style="width:9px;height:9px;border-radius:50%;background:#0B6E3F;flex:none;margin-top:4px"></span>
+            <span style="font-size:10.5pt"><strong>Green</strong> — everything saved to the sheet.</span>
+          </div>
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <span style="width:9px;height:9px;border-radius:50%;background:#E8A33D;flex:none;margin-top:4px"></span>
+            <span style="font-size:10.5pt"><strong>Amber</strong> — saves waiting, usually weak signal. Keep calling; nothing is lost. It sends itself when signal returns, even if you close the app.</span>
+          </div>
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <span style="width:9px;height:9px;border-radius:50%;background:#C4361A;flex:none;margin-top:4px"></span>
+            <span style="font-size:10.5pt"><strong>Red</strong> — something's wrong. Tell your manager; your work is still saved on the phone.</span>
+          </div>
+        </div>
+        <div style="font-size:11pt;font-weight:700;color:#0B6E3F;letter-spacing:.5px;margin-top:18px">YOUR DAY</div>
+        <p style="font-size:10.5pt;margin:7px 0 0">The <strong>Today</strong> tab shows calls against your 200, outcomes, interested leads captured, and how many are left. Resets at midnight.</p>
+      </div>
+    </div>
+  </div>
+</doc-page>
+</x-dc>
+</body>
+</html>
