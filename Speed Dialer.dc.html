@@ -18,41 +18,69 @@ input:focus,select:focus,textarea:focus{outline:2px solid #0B6E3F;outline-offset
 .sd-scroll::-webkit-scrollbar{width:0}
 @keyframes sdup{from{transform:translateY(100%)}to{transform:translateY(0)}}
 </style></helmet>
-<div style="display:flex;justify-content:center;padding:30px 16px 40px">
-<div style="width:390px;height:844px;background:#FAF8F4;border-radius:40px;overflow:hidden;box-shadow:0 10px 50px rgba(0,0,0,.2);display:flex;flex-direction:column;color:#141414;position:relative">
+<div style="display:flex;justify-content:center;padding:clamp(0px,2vw,30px) clamp(0px,2vw,16px) clamp(0px,3vw,40px)">
+<div style="width:100%;max-width:400px;height:min(844px,100dvh);background:#FAF8F4;border-radius:clamp(0px,4vw,40px);overflow:hidden;box-shadow:0 10px 50px rgba(0,0,0,.2);display:flex;flex-direction:column;color:#141414;position:relative">
 
-  <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600;letter-spacing:.2px">
-    <span>9:41</span><span style="opacity:.5">{{ statusRight }}</span>
+  <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 20px;font-size:13px;font-weight:600;letter-spacing:.2px">
+    <span style="flex:none">9:41</span>
+    <span style="opacity:.5;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ statusRight }}</span>
   </div>
 
   <sc-if value="{{ isOnboard }}" hint-placeholder-val="{{ true }}">
-    <div class="sd-scroll" style="flex:1;padding:44px 26px 26px">
-      <div style="width:46px;height:46px;border-radius:12px;background:#0B6E3F"></div>
-      <div style="font-size:34px;font-weight:700;letter-spacing:-1.2px;line-height:1.05;margin-top:26px">Speed Dialer</div>
-      <div style="font-size:16px;line-height:1.45;opacity:.55;margin-top:10px;max-width:280px">Tele-calling for farm land, primary, secondary, pre-launch and mandate plotted.</div>
-      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.45;margin:34px 0 14px">WHO'S CALLING?</div>
-      <div style="display:flex;flex-direction:column;gap:20px">
-        <sc-for list="{{ teamGroups }}" as="g" hint-placeholder-count="4">
-          <div>
-            <div style="font-size:12.5px;font-weight:700;color:#0B6E3F;margin-bottom:9px">{{ g.vertical }}</div>
-            <div style="display:flex;flex-direction:column;gap:8px">
-              <sc-for list="{{ g.members }}" as="m" hint-placeholder-count="2">
-                <button onClick="{{ m.onClick }}" style="{{ m.style }}">{{ m.label }}</button>
-              </sc-for>
-            </div>
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+      <div style="flex:none;padding:28px 22px 0">
+        <div style="width:42px;height:42px;border-radius:11px;background:#0B6E3F"></div>
+        <div style="font-size:31px;font-weight:700;letter-spacing:-1.1px;line-height:1.05;margin-top:20px">Speed Dialer</div>
+        <sc-if value="{{ onboardStep1 }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:15.5px;line-height:1.45;opacity:.55;margin-top:9px">Pick your team to start calling.</div>
+        </sc-if>
+        <sc-if value="{{ onboardStep2 }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onBackToTeams }}" style="display:block;width:100%;text-align:left;margin-top:12px;border:none;background:transparent;padding:0;font-size:14.5px;font-weight:600;color:#0B6E3F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">← {{ pickedVertical }}</button>
+        </sc-if>
+      </div>
+
+      <div class="sd-scroll" style="flex:1;min-height:0;padding:22px">
+        <sc-if value="{{ onboardStep1 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ teamGroups }}" as="g" hint-placeholder-count="4">
+              <button onClick="{{ g.onClick }}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:16px 17px;border:1px solid rgba(0,0,0,.14);background:#F3F0E9;border-radius:12px;cursor:pointer">
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:17px;font-weight:600;letter-spacing:-.2px">{{ g.vertical }}</span>
+                  <span style="display:block;font-size:13px;opacity:.5;margin-top:2px">{{ g.countLabel }}</span>
+                </span>
+                <span style="flex:none;font-size:19px;opacity:.3">›</span>
+              </button>
+            </sc-for>
           </div>
-        </sc-for>
+        </sc-if>
+
+        <sc-if value="{{ onboardStep2 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px">
+            <sc-for list="{{ pickedMembers }}" as="m" hint-placeholder-count="4">
+              <button onClick="{{ m.onClick }}" style="{{ m.style }}">{{ m.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
       </div>
-      <div style="height:1px;background:rgba(0,0,0,.1);margin:26px 0 20px"></div>
-      <div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.45;margin-bottom:11px">MANAGER</div>
-      <div style="display:flex;gap:9px">
-        <input value="{{ pin }}" onChange="{{ onPin }}" inputmode="numeric" placeholder="4-digit PIN" style="flex:1;padding:16px;border:1px solid rgba(0,0,0,.18);border-radius:10px;font-size:17px;letter-spacing:4px;background:#F3F0E9;box-sizing:border-box">
-        <button onClick="{{ onManagerEnter }}" style="padding:16px 20px;border:1px solid #141414;background:transparent;border-radius:10px;font-size:15px;font-weight:600">Enter</button>
+
+      <div style="flex:none;padding:14px 22px 20px;border-top:1px solid rgba(0,0,0,.09)">
+        <sc-if value="{{ pinClosed }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ onShowPin }}" style="width:100%;padding:13px;border:none;background:transparent;font-size:14.5px;font-weight:600;color:#0B6E3F;text-align:center">I'm the manager</button>
+        </sc-if>
+        <sc-if value="{{ pinOpen }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px">
+              <span style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.45">MANAGER PIN</span>
+              <button onClick="{{ onHidePin }}" style="border:none;background:transparent;padding:0;font-size:13.5px;font-weight:600;opacity:.5">Cancel</button>
+            </div>
+            <input value="{{ pin }}" onChange="{{ onPin }}" inputmode="numeric" placeholder="••••" style="width:100%;padding:15px;border:1px solid rgba(0,0,0,.18);border-radius:10px;font-size:19px;letter-spacing:7px;text-align:center;background:#F3F0E9;box-sizing:border-box">
+            <sc-if value="{{ pinError }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:13px;color:#C4361A;font-weight:600;margin-top:9px;text-align:center">Wrong PIN. Try again.</div>
+            </sc-if>
+            <button onClick="{{ onManagerEnter }}" style="width:100%;margin-top:9px;padding:16px;border:none;border-radius:10px;background:#141414;color:#FAF8F4;font-size:16px;font-weight:700">Enter dashboard</button>
+          </div>
+        </sc-if>
       </div>
-      <sc-if value="{{ pinError }}" hint-placeholder-val="{{ false }}">
-        <div style="font-size:13px;color:#C4361A;font-weight:600;margin-top:10px">Wrong PIN. Try again.</div>
-      </sc-if>
-      <div style="font-size:12px;opacity:.4;margin-top:28px;line-height:1.5">Runs in Safari and Chrome — no install. Add to Home Screen for a full-screen shortcut.</div>
     </div>
   </sc-if>
 
@@ -95,16 +123,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid #0B6E3F;outline-offset
       <sc-if value="{{ tabLeads }}" hint-placeholder-val="{{ true }}">
         <div style="flex:none;padding:6px 18px 13px;border-bottom:1px solid rgba(0,0,0,.09)">
           <div style="display:flex;align-items:flex-end;justify-content:space-between">
-            <div>
+            <div style="min-width:0">
               <div style="font-size:31px;font-weight:700;letter-spacing:-1px;line-height:1">{{ doneCount }}<span style="font-size:17px;font-weight:500;opacity:.4">/{{ target }}</span></div>
               <div style="font-size:11px;font-weight:700;letter-spacing:.7px;color:#0B6E3F;margin-top:4px">CALLED TODAY</div>
             </div>
-            <div style="font-size:12.5px;font-weight:600;opacity:.5;text-align:right;line-height:1.4">{{ vertical }}<br>{{ remaining }} left in sheet</div>
+            <div style="font-size:12.5px;font-weight:600;opacity:.5;text-align:right;line-height:1.4;min-width:0">{{ vertical }}<br>{{ remaining }} left in sheet</div>
           </div>
           <div style="height:5px;background:rgba(0,0,0,.09);border-radius:3px;margin-top:11px;overflow:hidden"><div style="height:100%;background:#0B6E3F;width:{{ pct }}"></div></div>
           <div style="display:flex;gap:9px;margin-top:13px;align-items:center">
-            <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search name or number" style="flex:1;padding:11px 12px;border:1px solid rgba(0,0,0,.16);border-radius:9px;font-size:15px;background:#F3F0E9;box-sizing:border-box">
-            <button onClick="{{ onNextUncalled }}" style="padding:12px 13px;border:none;border-radius:9px;background:#141414;color:#FAF8F4;font-size:13.5px;font-weight:700;white-space:nowrap">Next ↓</button>
+            <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search name or number" style="flex:1;min-width:0;padding:11px 12px;border:1px solid rgba(0,0,0,.16);border-radius:9px;font-size:15px;background:#F3F0E9;box-sizing:border-box">
+            <button onClick="{{ onNextUncalled }}" style="flex:none;padding:12px 13px;border:none;border-radius:9px;background:#141414;color:#FAF8F4;font-size:13.5px;font-weight:700;white-space:nowrap">Next ↓</button>
           </div>
           <div style="display:flex;gap:7px;margin-top:10px">
             <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
@@ -255,12 +283,12 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
 
       <sc-if value="{{ tabManager }}" hint-placeholder-val="{{ false }}">
         <div class="sd-scroll" style="flex:1;min-height:0;padding:12px 22px 26px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div style="min-width:0">
               <div style="font-size:27px;font-weight:700;letter-spacing:-.9px">Team today</div>
               <div style="font-size:14px;opacity:.5;margin-top:4px">{{ mgrSubhead }}</div>
             </div>
-            <button onClick="{{ onOpenSettings }}" style="padding:10px 13px;border:1px solid rgba(0,0,0,.2);background:transparent;border-radius:9px;font-size:13.5px;font-weight:600">Settings</button>
+            <button onClick="{{ onOpenSettings }}" style="flex:none;padding:10px 13px;border:1px solid rgba(0,0,0,.2);background:transparent;border-radius:9px;font-size:13.5px;font-weight:600">Settings</button>
           </div>
           <div onClick="{{ onRefreshMetrics }}" style="display:flex;align-items:center;gap:7px;margin-top:12px;cursor:pointer">
             <span style="width:7px;height:7px;border-radius:50%;flex:none;background:{{ syncDot }}"></span>
@@ -278,9 +306,9 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
           <div style="display:flex;flex-direction:column;gap:14px">
             <sc-for list="{{ mgrTeam }}" as="m" hint-placeholder-count="5">
               <div>
-                <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:14.5px;margin-bottom:5px">
-                  <span style="font-weight:600">{{ m.name }}</span>
-                  <span style="opacity:.5;font-size:13px">{{ m.calls }}/{{ target }} · {{ m.connect }} connect</span>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14.5px;margin-bottom:5px">
+                  <span style="font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.name }}</span>
+                  <span style="opacity:.5;font-size:13px;flex:none">{{ m.calls }}/{{ target }} · {{ m.connect }}</span>
                 </div>
                 <div style="height:9px;background:rgba(0,0,0,.08);border-radius:5px;overflow:hidden"><div style="height:100%;background:#0B6E3F;width:{{ m.width }}"></div></div>
                 <div style="font-size:12px;opacity:.42;margin-top:4px">{{ m.vertical }} · {{ m.left }} leads left</div>
@@ -290,9 +318,9 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
           <div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.45;margin:26px 0 12px">BY VERTICAL</div>
           <div style="display:flex;flex-direction:column;gap:1px;background:rgba(0,0,0,.09);border-radius:11px;overflow:hidden">
             <sc-for list="{{ mgrVerticals }}" as="v" hint-placeholder-count="5">
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#FAF8F4">
-                <span style="font-size:14.5px;font-weight:600">{{ v.name }}</span>
-                <span style="font-size:13px;opacity:.55">{{ v.calls }} calls · {{ v.hot }} interested</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 15px;background:#FAF8F4">
+                <span style="font-size:14.5px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ v.name }}</span>
+                <span style="font-size:13px;opacity:.55;flex:none;text-align:right">{{ v.calls }} calls · {{ v.hot }} hot</span>
               </div>
             </sc-for>
           </div>
@@ -300,9 +328,9 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
           <div style="display:flex;flex-direction:column;gap:9px">
             <sc-for list="{{ hotLeads }}" as="h" hint-placeholder-count="3">
               <div style="background:#F3F0E9;border-radius:12px;padding:14px">
-                <div style="display:flex;justify-content:space-between;align-items:baseline">
-                  <span style="font-size:16px;font-weight:600">{{ h.name }}</span>
-                  <span style="font-size:12px;opacity:.5">{{ h.by }}</span>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+                  <span style="font-size:16px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ h.name }}</span>
+                  <span style="font-size:12px;opacity:.5;flex:none">{{ h.by }}</span>
                 </div>
                 <div style="font-size:13.5px;opacity:.6;margin-top:5px;line-height:1.45">{{ h.detail }}</div>
               </div>
@@ -311,9 +339,9 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
           <div style="font-size:11px;font-weight:700;letter-spacing:.8px;opacity:.45;margin:26px 0 12px">FOLLOW-UPS DUE</div>
           <div style="display:flex;flex-direction:column;gap:1px;background:rgba(0,0,0,.09);border-radius:11px;overflow:hidden">
             <sc-for list="{{ followUps }}" as="f" hint-placeholder-count="3">
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#FAF8F4">
-                <span style="font-size:14.5px;font-weight:600">{{ f.name }}</span>
-                <span style="font-size:13px;opacity:.55">{{ f.when }} · {{ f.by }}</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 15px;background:#FAF8F4">
+                <span style="font-size:14.5px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.name }}</span>
+                <span style="font-size:13px;opacity:.55;flex:none;text-align:right">{{ f.when }} · {{ f.by }}</span>
               </div>
             </sc-for>
           </div>
@@ -329,10 +357,13 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
             <div style="font-size:10px;font-weight:700;letter-spacing:.8px;opacity:.45;margin-bottom:8px">GOOGLE SHEET CONNECTION</div>
             <input value="{{ scriptUrlValue }}" onChange="{{ onScriptUrl }}" placeholder="Apps Script web-app URL (…/exec)" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.17);border-radius:9px;font-size:14px;background:#FAF8F4;box-sizing:border-box">
             <input value="{{ apiTokenValue }}" onChange="{{ onApiToken }}" placeholder="Access token (must match API_TOKEN in the script)" style="width:100%;margin-top:9px;padding:13px;border:1px solid rgba(0,0,0,.17);border-radius:9px;font-size:14px;background:#FAF8F4;box-sizing:border-box">
-            <div style="display:flex;align-items:center;gap:9px;margin-top:10px">
-              <button onClick="{{ onTestConnection }}" style="padding:11px 14px;border:none;border-radius:8px;background:#141414;color:#FAF8F4;font-size:14px;font-weight:600">Test &amp; set up tabs</button>
-              <span style="font-size:11.5px;opacity:.5;line-height:1.35;flex:1">{{ connectionNote }}</span>
-            </div>
+            <button onClick="{{ onTestConnection }}" style="width:100%;margin-top:10px;padding:13px;border:none;border-radius:8px;background:#141414;color:#FAF8F4;font-size:14.5px;font-weight:600">Test &amp; set up tabs</button>
+            <div style="font-size:12px;opacity:.65;line-height:1.4;margin-top:9px">{{ connectionNote }}</div>
+          </div>
+          <div style="background:#F3F0E9;border-radius:13px;padding:16px;margin-top:16px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.8px;opacity:.45;margin-bottom:8px">IMPORT LEADS FROM VERTICAL SHEETS</div>
+            <button onClick="{{ onImport }}" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.2);border-radius:8px;background:transparent;font-size:14.5px;font-weight:600">Pull new leads now</button>
+            <div style="font-size:12px;opacity:.65;line-height:1.4;margin-top:9px">{{ importNote }}</div>
           </div>
           <div style="background:#F3F0E9;border-radius:13px;padding:16px;margin-top:16px">
             <div style="font-size:10px;font-weight:700;letter-spacing:.8px;opacity:.45;margin-bottom:8px">MANAGER PIN</div>
@@ -349,15 +380,15 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
                 <div style="font-size:10px;font-weight:700;letter-spacing:.8px;opacity:.45;margin-bottom:10px">{{ g.title }}</div>
                 <div style="display:flex;flex-wrap:wrap;gap:7px">
                   <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4">
-                    <div style="display:flex;align-items:center;gap:7px;padding:9px 11px;background:#FAF8F4;border-radius:8px;font-size:14px;font-weight:500;max-width:100%">
-                      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.label }}</span>
-                      <button onClick="{{ it.onRemove }}" style="border:none;background:transparent;padding:0;font-size:15px;opacity:.4;line-height:1">×</button>
+                    <div style="display:flex;align-items:center;gap:7px;padding:9px 11px;background:#FAF8F4;border-radius:8px;font-size:14px;font-weight:500;max-width:100%;min-width:0">
+                      <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.label }}</span>
+                      <button onClick="{{ it.onRemove }}" style="flex:none;border:none;background:transparent;padding:0;font-size:15px;opacity:.4;line-height:1">×</button>
                     </div>
                   </sc-for>
                 </div>
                 <div style="display:flex;gap:7px;margin-top:11px">
                   <input value="{{ g.draft }}" onChange="{{ g.onDraft }}" placeholder="{{ g.placeholder }}" style="flex:1;min-width:0;padding:11px;border:1px solid rgba(0,0,0,.17);border-radius:8px;font-size:14.5px;background:#FAF8F4;box-sizing:border-box">
-                  <button onClick="{{ g.onAdd }}" style="padding:11px 14px;border:none;border-radius:8px;background:#141414;color:#FAF8F4;font-size:14px;font-weight:600">Add</button>
+                  <button onClick="{{ g.onAdd }}" style="flex:none;padding:11px 14px;border:none;border-radius:8px;background:#141414;color:#FAF8F4;font-size:14px;font-weight:600">Add</button>
                 </div>
               </div>
             </sc-for>
@@ -422,6 +453,7 @@ class Component extends DCLogic {
     pin: "", pinError: false, sheetUrl: "", vertical: "Pre-launch",
     query: "", filter: "Uncalled", open: -1, pendingOutcome: null,
     queue: [], syncing: false, syncError: null, lastSync: null,
+    pickedVertical: null, pinOpen: false, testState: null, importState: null,
     loading: false, online: true, metrics: null,
     leads: LEAD_SEED.map(([name, phone], i) => ({
       name, phone,
@@ -454,14 +486,39 @@ class Component extends DCLogic {
   api(action, body) {
     const url = this.state.settings.scriptUrl;
     if (!url) return Promise.reject(new Error("No script URL"));
-    return fetch(url, {
+    const payload = Object.assign(
+      { action, token: this.state.settings.apiToken || "" }, body || {});
+
+    const post = () => fetch(url, {
       method: "POST", redirect: "follow",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(Object.assign(
-        { action, token: this.state.settings.apiToken || "" }, body || {}))
-    }).then(r => r.json()).then(j => {
+      body: JSON.stringify(payload)
+    });
+
+    const get = () => {
+      const qs = Object.keys(payload).map(k => {
+        const v = payload[k];
+        return encodeURIComponent(k) + "=" +
+          encodeURIComponent(typeof v === "object" ? JSON.stringify(v) : v);
+      }).join("&");
+      return fetch(url + (url.indexOf("?") === -1 ? "?" : "&") + qs, { redirect: "follow" });
+    };
+
+    const read = (r) => r.text().then(t => {
+      let j;
+      try { j = JSON.parse(t); }
+      catch (e) {
+        throw new Error(/accounts\.google|signin/i.test(t)
+          ? "Google is asking for sign-in — redeploy with access set to Anyone"
+          : "Script returned an error page, not data");
+      }
       if (!j.ok) throw new Error(j.error || "Request failed");
       return j;
+    });
+
+    return post().then(read).catch(err => {
+      if (!/Failed to fetch|NetworkError|Load failed/i.test(String(err.message))) throw err;
+      return get().then(read);
     });
   }
 
@@ -564,7 +621,7 @@ class Component extends DCLogic {
   }
   tabBtn(active) {
     return `flex:1;padding:11px 4px;border:none;background:transparent;border-radius:9px;font-size:12.5px;font-weight:700;` +
-      `letter-spacing:.2px;cursor:pointer;color:${active ? "#0B6E3F" : "rgba(20,20,20,.4)"};` +
+      `letter-spacing:.2px;cursor:pointer;color:${active ? "#0B6E3F" : "#5A5A57"};` +
       `border-top:2px solid ${active ? "#0B6E3F" : "transparent"}`;
   }
   setLead(i, patch) {
@@ -588,6 +645,15 @@ class Component extends DCLogic {
       if (S.filter === "Follow-up") return !!l.f.followUp;
       return true;
     });
+
+    const parsedTeam = S.settings.team.map(parseMember);
+    const groups = S.settings.verticals
+      .concat(parsedTeam.map(p => p.vertical).filter(v => v && !S.settings.verticals.includes(v)))
+      .map(v => ({ vertical: v, members: parsedTeam.filter(p => p.vertical === v).map(p => p.name) }))
+      .filter(g => g.members.length)
+      .concat(parsedTeam.some(p => !p.vertical)
+        ? [{ vertical: "Unassigned", members: parsedTeam.filter(p => !p.vertical).map(p => p.name) }]
+        : []);
 
     const groupDefs = [
       ["team", "TEAM MEMBERS", "Add a caller"],
@@ -639,28 +705,33 @@ class Component extends DCLogic {
       onManagerEnter: () => S.pin === (S.settings.pin || this.props.managerPin || "1947")
         ? set({ isManager: true, caller: "Manager", screen: "app", tab: "manager", pin: "", pinError: false })
         : set({ pinError: true }),
-      teamGroups: (() => {
-        const parsed = S.settings.team.map(parseMember);
-        const order = S.settings.verticals.concat(
-          parsed.map(p => p.vertical).filter(v => v && !S.settings.verticals.includes(v))
-        );
-        return order.map(v => ({
-          vertical: v,
-          members: parsed.filter(p => p.vertical === v).map(p => ({
-            label: p.name, style: this.rowBtn(S.caller === p.name),
-            onClick: () => set({ caller: p.name, vertical: v || S.vertical, screen: "load" })
-          }))
-        })).filter(g => g.members.length).concat(
-          parsed.some(p => !p.vertical) ? [{
-            vertical: "Unassigned",
-            members: parsed.filter(p => !p.vertical).map(p => ({
-              label: p.name, style: this.rowBtn(S.caller === p.name),
-              onClick: () => set({ caller: p.name, screen: "load" })
-            }))
-          }] : []
-        );
-      })(),
-      onBackToOnboard: () => set({ screen: "onboard", caller: null }),
+      teamGroups: groups.map(g => ({
+        vertical: g.vertical,
+        countLabel: g.members.length + (g.members.length === 1 ? " caller" : " callers"),
+        onClick: () => set({ pickedVertical: g.vertical, pinOpen: false })
+      })),
+      onboardStep1: !S.pickedVertical,
+      onboardStep2: !!S.pickedVertical,
+      pickedVertical: S.pickedVertical || "",
+      onBackToTeams: () => set({ pickedVertical: null }),
+      pickedMembers: (groups.filter(g => g.vertical === S.pickedVertical)[0] || { members: [] })
+        .members.map(name => ({
+          label: name,
+          style: `padding:18px 12px;border-radius:12px;font-size:16.5px;font-weight:600;cursor:pointer;` +
+            `min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;` +
+            `border:1px solid ${S.caller === name ? "#0B6E3F" : "rgba(0,0,0,.14)"};` +
+            `background:${S.caller === name ? "#0B6E3F" : "#F3F0E9"};` +
+            `color:${S.caller === name ? "#FAF8F4" : "#141414"}`,
+          onClick: () => set({
+            caller: name,
+            vertical: S.pickedVertical === "Unassigned" ? S.vertical : S.pickedVertical,
+            screen: "load"
+          })
+        })),
+      pinOpen: S.pinOpen, pinClosed: !S.pinOpen,
+      onShowPin: () => set({ pinOpen: true, pinError: false }),
+      onHidePin: () => set({ pinOpen: false, pin: "", pinError: false }),
+      onBackToOnboard: () => set({ screen: "onboard", caller: null, pickedVertical: null }),
       onGoogle: () => set({ sheetUrl: "drive.google.com › Leads › " + S.vertical + " — Sheet 3" }),
       sheetUrl: S.sheetUrl, onSheetUrl: (e) => set({ sheetUrl: e.target.value }),
       verticalPick: S.settings.verticals.map(label => ({
@@ -847,12 +918,12 @@ class Component extends DCLogic {
       scriptUrlValue: S.settings.scriptUrl,
       onScriptUrl: (e) => {
         const v = e.target.value.trim();
-        this.setState(s => ({ settings: Object.assign({}, s.settings, { scriptUrl: v }) }));
+        this.setState(s => ({ settings: Object.assign({}, s.settings, { scriptUrl: v }), testState: null }));
       },
       apiTokenValue: S.settings.apiToken,
       onApiToken: (e) => {
         const v = e.target.value.trim();
-        this.setState(s => ({ settings: Object.assign({}, s.settings, { apiToken: v }) }));
+        this.setState(s => ({ settings: Object.assign({}, s.settings, { apiToken: v }), testState: null }));
       },
       pinValue: S.settings.pin,
       onPinChange: (e) => {
@@ -862,17 +933,40 @@ class Component extends DCLogic {
       pinNote: S.settings.pin
         ? "Manager PIN is set — the default no longer works"
         : "Still using the default PIN 1947 — change it before rollout",
-      connectionNote: S.settings.scriptUrl
-        ? "Connected · leads load from the sheet and saves write back"
+      connectionNote: S.testState === "testing" ? "Testing…"
+        : S.testState === "ok" ? "✓ Connected — Leads and Call Log tabs are ready"
+        : S.testState ? "✕ " + S.testState
+        : S.settings.scriptUrl ? "Tap Test to check the connection"
         : "Not connected — the app runs on sample data",
-      onTestConnection: () => this.api("setup", {})
-        .then(() => set({ syncError: null, lastSync: new Date() }))
-        .catch(e => set({ syncError: e.message })),
+      onTestConnection: () => {
+        if (!S.settings.scriptUrl) { set({ testState: "Paste the /exec URL first" }); return; }
+        set({ testState: "testing" });
+        this.api("setup", {})
+          .then(() => set({ testState: "ok", syncError: null, lastSync: new Date() }))
+          .catch(e => set({ testState: /Failed to fetch|NetworkError|Load failed/i.test(e.message)
+            ? "Blocked by Google. In Apps Script: Deploy → Manage deployments → edit → Who has access must be \"Anyone\" (not \"Anyone with a Google account\"), then New version → Deploy."
+            : e.message }));
+      },
+      importNote: S.importState === "running" ? "Pulling new leads…"
+        : S.importState || "Reads every sheet listed on the Sources tab of the master and adds new numbers only.",
+      onImport: () => {
+        if (!S.settings.scriptUrl) { set({ importState: "Connect a sheet first" }); return; }
+        set({ importState: "running" });
+        this.api("import", {})
+          .then(j => {
+            const detail = (j.sources || []).filter(s => s.note)
+              .map(s => s.vertical + ": " + s.note).join(" · ");
+            set({ importState: "✓ " + j.imported + " new lead" + (j.imported === 1 ? "" : "s") +
+              " added" + (detail ? " — " + detail : "") });
+            this.metricsAt = 0;
+          })
+          .catch(e => set({ importState: "✕ " + e.message }));
+      },
       onOpenSettings: () => set({ tab: "settings" }),
       onCloseSettings: () => set({ tab: "manager" }),
       onSignOut: () => {
         try { localStorage.removeItem(this.KEY); localStorage.removeItem("speedDialer.v1"); } catch (e) {}
-        set({ screen: "onboard", caller: null, isManager: false, tab: "leads", sheetUrl: "" });
+        set({ screen: "onboard", caller: null, isManager: false, tab: "leads", sheetUrl: "", pickedVertical: null, pinOpen: false });
       },
 
       tabs: (S.isManager

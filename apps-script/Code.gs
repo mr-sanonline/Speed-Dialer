@@ -11,6 +11,7 @@
 
 var LEADS_TAB = 'Leads';
 var LOG_TAB   = 'Call Log';
+var SRC_TAB   = 'Sources';
 var TZ        = 'Asia/Kolkata';
 var DAY_TARGET_DEFAULT = 200;
 
@@ -29,6 +30,9 @@ var COLS = [
 ];
 
 var LOG_COLS = ['Timestamp','Lead ID','Name','Phone','Vertical','Caller','Outcome','Notes'];
+
+var SRC_COLS = ['Vertical','Source spreadsheet URL','Tab name','Rows imported','Last imported'];
+var DEFAULT_VERTICALS = ['Farm land','Primary market','Secondary market','Pre-launch','Mandate plotted'];
 
 /* ---------- entry points ---------- */
 
@@ -52,6 +56,7 @@ function handle(req) {
       case 'leads':    out = getLeads(req); break;
       case 'save':     out = saveLeads(req); break;
       case 'metrics':  out = getMetrics(req); break;
+      case 'import':   out = importLeads(req); break;
       case 'reassign': out = reassign(req); break;
       case 'setup':    out = ensureSheets(); break;
       default:         out = { ok: false, error: 'Unknown action: ' + req.action };
@@ -86,8 +91,113 @@ function ensureSheets() {
     log.getRange(1, 1, 1, LOG_COLS.length).setValues([LOG_COLS]).setFontWeight('bold');
     log.setFrozenRows(1);
   }
+
+  var src = ss.getSheetByName(SRC_TAB) || ss.insertSheet(SRC_TAB);
+  if (src.getLastRow() === 0) {
+    src.getRange(1, 1, 1, SRC_COLS.length).setValues([SRC_COLS]).setFontWeight('bold');
+    src.setFrozenRows(1);
+    src.getRange(2, 1, DEFAULT_VERTICALS.length, 1)
+      .setValues(DEFAULT_VERTICALS.map(function (v) { return [v]; }));
+    src.getRange(2, 3, DEFAULT_VERTICALS.length, 1)
+      .setValues(DEFAULT_VERTICALS.map(function () { return ['Sheet1']; }));
+    src.setColumnWidth(2, 420);
+  }
+
   return { ok: true, columns: COLS };
 }
+
+/* ---------- pulling leads in from per-vertical source sheets ---------- */
+
+/**
+ * action=import — reads every row of the Sources tab, opens each source
+ * spreadsheet, and appends any Name/Phone pair not already in the master.
+ * Safe to run repeatedly; existing leads and their call details are untouched.
+ */
+function importLeads(req) {
+  ensureSheets();
+  var ss = book();
+  var src = ss.getSheetByName(SRC_TAB);
+  if (src.getLastRow() < 2) return { ok: true, imported: 0, sources: [] };
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var d = readLeads(), m = d.map, leads = d.sheet;
+    var known = {};
+    d.rows.forEach(function (r) {
+      var p = normPhone(r[m['Phone']]);
+      if (p) known[p] = true;
+    });
+
+    var si = idx(src);
+    var srcRows = src.getRange(2, 1, src.getLastRow() - 1, src.getLastColumn()).getValues();
+    var appended = [], report = [];
+
+    srcRows.forEach(function (row, i) {
+      var vertical = String(row[si['Vertical']] || '').trim();
+      var url      = String(row[si['Source spreadsheet URL']] || '').trim();
+      var tabName  = String(row[si['Tab name']] || '').trim() || 'Sheet1';
+      if (!vertical || !url) return;
+
+      var added = 0, note = '';
+      try {
+        var other = SpreadsheetApp.openByUrl(url);
+        var tab = other.getSheetByName(tabName) || other.getSheets()[0];
+        if (tab.getLastRow() < 2) {
+          note = 'empty';
+        } else {
+          var head = tab.getRange(1, 1, 1, tab.getLastColumn()).getValues()[0]
+            .map(function (h) { return String(h).trim().toLowerCase(); });
+          var nameCol = head.indexOf('name');
+          var phoneCol = head.map(function (h) { return h.replace(/\s/g, ''); })
+            .indexOf('phonenumber');
+          if (phoneCol === -1) phoneCol = head.indexOf('phone');
+          if (nameCol === -1 || phoneCol === -1) {
+            note = 'needs Name and Phone columns';
+          } else {
+            var vals = tab.getRange(2, 1, tab.getLastRow() - 1, tab.getLastColumn()).getValues();
+            vals.forEach(function (v) {
+              var phone = String(v[phoneCol] == null ? '' : v[phoneCol]).trim();
+              var key = normPhone(phone);
+              if (!key || known[key]) return;
+              known[key] = true;
+              var out = new Array(COLS.length).fill('');
+              out[m['Name']] = String(v[nameCol] || '').trim();
+              out[m['Phone']] = phone;
+              out[m['Vertical']] = vertical;
+              appended.push(out);
+              added++;
+            });
+          }
+        }
+      } catch (err) {
+        note = 'cannot open — share it with ' + Session.getEffectiveUser().getEmail();
+      }
+
+      src.getRange(i + 2, si['Rows imported'] + 1).setValue(added);
+      src.getRange(i + 2, si['Last imported'] + 1).setValue(note || stamp());
+      report.push({ vertical: vertical, added: added, note: note });
+    });
+
+    if (appended.length) {
+      leads.getRange(leads.getLastRow() + 1, 1, appended.length, COLS.length).setValues(appended);
+    }
+    CacheService.getScriptCache().remove('metrics');
+    return { ok: true, imported: appended.length, sources: report };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Run once from the editor to pull new leads automatically every hour. */
+function installHourlyImport() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'scheduledImport') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('scheduledImport').timeBased().everyHours(1).create();
+}
+
+function scheduledImport() { importLeads({}); }
 
 function idx(sheet) {
   var head = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
