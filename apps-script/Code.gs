@@ -170,12 +170,25 @@ function importLeads(req) {
         } else {
           var head = tab.getRange(1, 1, 1, tab.getLastColumn()).getValues()[0]
             .map(function (h) { return String(h).trim().toLowerCase(); });
-          var nameCol = head.indexOf('name');
-          var phoneCol = head.map(function (h) { return h.replace(/\s/g, ''); })
-            .indexOf('phonenumber');
-          if (phoneCol === -1) phoneCol = head.indexOf('phone');
-          if (nameCol === -1 || phoneCol === -1) {
-            note = 'needs Name and Phone columns';
+
+          // forgiving header match: "Name"/"Customer Name"/"Lead Name",
+          // "Phone"/"Phone Number"/"Mobile"/"Contact No"
+          var nameCol = -1, phoneCol = -1;
+          var PHONE_EXACT = ['ph','no','num','tel','cell','mob','phno','mobno','contactno','phoneno'];
+          head.forEach(function (h, i) {
+            var t = h.replace(/[^a-z]/g, '');
+            if (!t) return;
+            if (phoneCol === -1 &&
+                (/phone|mobile|contact|whatsapp|number/.test(t) || PHONE_EXACT.indexOf(t) !== -1)) {
+              phoneCol = i;
+            }
+            if (nameCol === -1 && /name/.test(t) && !/username|filename/.test(t)) nameCol = i;
+          });
+          // last resort: two-column sheet with no usable headers
+          if (nameCol === -1 && phoneCol === -1 && head.length >= 2) { nameCol = 0; phoneCol = 1; }
+
+          if (phoneCol === -1) {
+            note = 'no phone column found';
           } else {
             var vals = tab.getRange(2, 1, tab.getLastRow() - 1, tab.getLastColumn()).getValues();
             vals.forEach(function (v) {
@@ -184,7 +197,7 @@ function importLeads(req) {
               if (!key || known[key]) return;
               known[key] = true;
               var out = new Array(COLS.length).fill('');
-              out[m['Name']] = String(v[nameCol] || '').trim();
+              out[m['Name']] = nameCol === -1 ? '' : String(v[nameCol] || '').trim();
               out[m['Phone']] = phone;
               out[m['Vertical']] = vertical;
               appended.push(out);
