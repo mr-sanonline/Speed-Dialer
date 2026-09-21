@@ -370,8 +370,10 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
           </div>
           <div style="background:#F3F0E9;border-radius:13px;padding:16px;margin-top:16px">
             <div style="font-size:10px;font-weight:700;letter-spacing:.8px;opacity:.45;margin-bottom:8px">MANAGER PIN</div>
-            <input value="{{ pinValue }}" onChange="{{ onPinChange }}" inputmode="numeric" placeholder="Set a new PIN" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.17);border-radius:9px;font-size:17px;letter-spacing:4px;background:#FAF8F4;box-sizing:border-box">
-            <div style="font-size:11.5px;opacity:.5;margin-top:9px;line-height:1.4">{{ pinNote }}</div>
+            <input value="{{ pinCurrentValue }}" onChange="{{ onPinCurrent }}" inputmode="numeric" placeholder="Current PIN" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.17);border-radius:9px;font-size:17px;letter-spacing:4px;background:#FAF8F4;box-sizing:border-box">
+            <input value="{{ pinValue }}" onChange="{{ onPinChange }}" inputmode="numeric" placeholder="New PIN" style="width:100%;margin-top:9px;padding:13px;border:1px solid rgba(0,0,0,.17);border-radius:9px;font-size:17px;letter-spacing:4px;background:#FAF8F4;box-sizing:border-box">
+            <button onClick="{{ onPinSave }}" style="width:100%;margin-top:9px;padding:13px;border:none;border-radius:8px;background:#141414;color:#FAF8F4;font-size:14.5px;font-weight:600">Change PIN</button>
+            <div style="font-size:12px;opacity:.65;margin-top:9px;line-height:1.4">{{ pinNote }}</div>
           </div>
           <div style="background:#F3F0E9;border-radius:13px;padding:16px;margin-top:16px">
             <div style="font-size:10px;font-weight:700;letter-spacing:.8px;opacity:.45;margin-bottom:8px">DAILY CALL TARGET</div>
@@ -474,7 +476,9 @@ class Component extends DCLogic {
     query: "", filter: "Uncalled", open: -1, pendingOutcome: null,
     queue: [], syncing: false, syncError: null, lastSync: null,
     pickedVertical: null, pinOpen: false, testState: null, importState: null, editing: null,
-    publishState: null, publishedAt: null, dirty: false, rosterVersion: ROSTER_VERSION,
+    publishState: null, publishedAt: null, dirty: false, conflict: false,
+    pinDraft: "", pinCurrent: "", pinState: null,
+    rosterVersion: ROSTER_VERSION,
     loading: false, online: true, metrics: null,
     leads: LEAD_SEED.map(([name, phone], i) => ({
       name, phone,
@@ -588,6 +592,9 @@ class Component extends DCLogic {
   }
 
   SHARED = ["team", "verticals", "ptypes", "budgets", "outcomes", "langs", "templates", "projects"];
+  // NOTE: the manager PIN is never shared — it is verified by the script so it
+  // never lands in a caller's localStorage. Nothing belongs here yet.
+  SHARED_SCALARS = [];
 
   pullConfig() {
     if (!this.state.settings.scriptUrl) return;
@@ -599,6 +606,9 @@ class Component extends DCLogic {
       this.setState(s => {
         const next = Object.assign({}, s.settings);
         this.SHARED.forEach(k => { if (Array.isArray(j.config[k])) next[k] = j.config[k]; });
+        this.SHARED_SCALARS.forEach(k => {
+          if (typeof j.config[k] === "string") next[k] = j.config[k];
+        });
         const stale = !s.isManager && s.caller && Array.isArray(j.config.team) &&
           !j.config.team.map(parseMember).some(m => m.name === s.caller);
         return {
@@ -640,7 +650,6 @@ class Component extends DCLogic {
           dirty: !!s.dirty, publishedAt: s.publishedAt || prev.publishedAt,
           settings: s.settings
             ? Object.assign({}, prev.settings, s.settings,
-                // a build with corrected spellings wins over the stored copy, once
                 // a build with corrected spellings wins over the stored copy once —
                 // but never over a roster the manager has published or is still editing
                 (s.rosterVersion || 1) < ROSTER_VERSION && !s.publishedAt && !s.dirty
@@ -649,6 +658,13 @@ class Component extends DCLogic {
           rosterVersion: ROSTER_VERSION
         }));
       }
+      // purge any PIN an earlier build replicated into this device's storage
+      this.setState(s => {
+        if (!s.settings.pin) return null;
+        const scrubbed = Object.assign({}, s.settings);
+        delete scrubbed.pin;
+        return { settings: scrubbed };
+      });
     } catch (e) {}
     this.hydrated = true;
     const sync = () => this.setState({ online: navigator.onLine }, () => this.flush());
@@ -765,9 +781,21 @@ class Component extends DCLogic {
       query: S.query, onQuery: (e) => set({ query: e.target.value }),
       pin: S.pin, onPin: (e) => set({ pin: e.target.value.slice(0, 4), pinError: false }),
       pinError: S.pinError,
-      onManagerEnter: () => S.pin === (S.settings.pin || this.props.managerPin || "1947")
-        ? set({ isManager: true, caller: "Manager", screen: "app", tab: "manager", pin: "", pinError: false })
-        : set({ pinError: true }),
+      onManagerEnter: () => {
+        const grant = () => set({
+          isManager: true, caller: "Manager", screen: "app", tab: "manager",
+          pin: "", pinError: false
+        });
+        const deny = () => set({ pinError: true });
+        const entered = S.pin;
+        if (!S.settings.scriptUrl) {
+          // not connected yet — fall back to the local/default PIN
+          return entered === (this.props.managerPin || "1947") ? grant() : deny();
+        }
+        this.api("checkPin", { pin: entered })
+          .then(j => j.match ? grant() : deny())
+          .catch(() => entered === (this.props.managerPin || "1947") ? grant() : deny());
+      },
       teamGroups: groups.map(g => ({
         vertical: g.vertical,
         countLabel: g.members.length + (g.members.length === 1 ? " caller" : " callers"),
@@ -953,7 +981,7 @@ class Component extends DCLogic {
       ],
       followUps: [
         { name: "Mohan Rao", when: "Today 4:00pm", by: "Sujan" },
-        { name: "Deepa Nair", when: "Tomorrow", by: "Sania" },
+        { name: "Deepa Nair", when: "Tomorrow", by: "Saniya" },
         { name: "Arun Prasad", when: "Sat 20 Sep", by: "Harish" }
       ],
 
@@ -1005,21 +1033,32 @@ class Component extends DCLogic {
       scriptUrlValue: S.settings.scriptUrl,
       onScriptUrl: (e) => {
         const v = e.target.value.trim();
-        this.setState(s => ({ settings: Object.assign({}, s.settings, { scriptUrl: v }), testState: null }));
+        this.setState(
+          s => ({ settings: Object.assign({}, s.settings, { scriptUrl: v }), testState: null }),
+          // learn the current publishedAt before this device can make conflicting edits
+          () => { if (/\/exec\/?$/.test(v)) this.pullConfig(); }
+        );
       },
       apiTokenValue: S.settings.apiToken,
       onApiToken: (e) => {
         const v = e.target.value.trim();
         this.setState(s => ({ settings: Object.assign({}, s.settings, { apiToken: v }), testState: null }));
       },
-      pinValue: S.settings.pin,
-      onPinChange: (e) => {
-        const v = e.target.value.replace(/\D/g, "").slice(0, 6);
-        this.setState(s => ({ settings: Object.assign({}, s.settings, { pin: v }) }));
+      pinValue: S.pinDraft,
+      onPinChange: (e) => set({ pinDraft: e.target.value.replace(/\D/g, "").slice(0, 6), pinState: null }),
+      pinCurrentValue: S.pinCurrent,
+      onPinCurrent: (e) => set({ pinCurrent: e.target.value.replace(/\D/g, "").slice(0, 6), pinState: null }),
+      onPinSave: () => {
+        if (!S.settings.scriptUrl) { set({ pinState: "Connect a sheet first" }); return; }
+        if (!/^\d{4,6}$/.test(S.pinDraft || "")) { set({ pinState: "New PIN must be 4–6 digits" }); return; }
+        set({ pinState: "saving" });
+        this.api("setPin", { pin: S.pinDraft, currentPin: S.pinCurrent || "" })
+          .then(() => set({ pinState: "✓ Changed for everyone", pinDraft: "", pinCurrent: "" }))
+          .catch(e => set({ pinState: "✕ " + e.message }));
       },
-      pinNote: S.settings.pin
-        ? "Manager PIN is set — the default no longer works"
-        : "Still using the default PIN 1947 — change it before rollout",
+      pinNote: S.pinState === "saving" ? "Saving…"
+        : S.pinState
+        || "Stored in the script, not on phones. Takes effect everywhere immediately.",
       connectionNote: S.testState === "testing" ? "Testing…"
         : S.testState === "ok" ? "✓ Connected — Leads and Call Log tabs are ready"
         : S.testState ? "✕ " + S.testState
@@ -1061,13 +1100,17 @@ class Component extends DCLogic {
         if (!S.settings.scriptUrl) { set({ publishState: "Connect a sheet first" }); return; }
         const config = { target: S.target };
         this.SHARED.forEach(k => { config[k] = S.settings[k]; });
+        this.SHARED_SCALARS.forEach(k => { config[k] = S.settings[k] || ""; });
         set({ publishState: "running" });
-        this.api("publish", { config })
+        this.api("publish", { config, basedOn: S.publishedAt || null, force: S.conflict })
           .then(j => set({
             publishState: "✓ Sent to the team · " + j.publishedAt,
-            publishedAt: j.publishedAt, dirty: false
+            publishedAt: j.publishedAt, dirty: false, conflict: false
           }))
-          .catch(e => set({ publishState: "✕ " + e.message }));
+          .catch(e => set({
+            publishState: "✕ " + e.message,
+            conflict: /Another manager published/.test(e.message)
+          }));
       },
       onOpenSettings: () => set({ tab: "settings" }),
       onCloseSettings: () => set({ tab: "manager" }),

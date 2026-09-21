@@ -58,6 +58,8 @@ function handle(req) {
       case 'metrics':  out = getMetrics(req); break;
       case 'config':   out = getConfig(req); break;
       case 'publish':  out = publishConfig(req); break;
+      case 'setPin':   out = setPin(req); break;
+      case 'checkPin': out = checkPin(req); break;
       case 'import':   out = importLeads(req); break;
       case 'reassign': out = reassign(req); break;
       case 'setup':    out = ensureSheets(); break;
@@ -111,20 +113,60 @@ function ensureSheets() {
 /* ---------- shared config (roster, dropdowns, target) ---------- */
 
 var CONFIG_KEY = 'speedDialerConfig';
+var PIN_KEY    = 'speedDialerManagerPin';
+var PIN_DEFAULT = '1947';
+
+/**
+ * The manager PIN is deliberately NOT part of the published config — that config
+ * is replicated to every caller's phone. It lives in its own Script Property and
+ * is only ever compared here, so the secret never reaches a client.
+ */
+function setPin(req) {
+  var next = String(req.pin || '').trim();
+  if (!/^\d{4,6}$/.test(next)) return { ok: false, error: 'PIN must be 4–6 digits' };
+  var props = PropertiesService.getScriptProperties();
+  var current = props.getProperty(PIN_KEY) || PIN_DEFAULT;
+  if (String(req.currentPin || '') !== current) {
+    return { ok: false, error: 'Current PIN is wrong' };
+  }
+  props.setProperty(PIN_KEY, next);
+  return { ok: true, changedAt: stamp() };
+}
+
+function checkPin(req) {
+  var current = PropertiesService.getScriptProperties().getProperty(PIN_KEY) || PIN_DEFAULT;
+  var match = String(req.pin || '') === current;
+  return { ok: true, match: match, isDefault: current === PIN_DEFAULT };
+}
 
 /** action=config — every phone calls this on open and adopts what the manager published. */
 function getConfig(req) {
   var raw = PropertiesService.getScriptProperties().getProperty(CONFIG_KEY);
   if (!raw) return { ok: true, config: null, publishedAt: null };
   var saved = JSON.parse(raw);
+  if (saved.config) delete saved.config.pin; // never serve the PIN to a client
   return { ok: true, config: saved.config, publishedAt: saved.publishedAt };
 }
 
-/** action=publish { config } — manager pushes the roster and dropdown lists to all phones. */
+/** action=publish { config, basedOn } — manager pushes the roster and dropdown lists to all phones. */
 function publishConfig(req) {
   if (!req.config) return { ok: false, error: 'No config supplied' };
+  var props = PropertiesService.getScriptProperties();
+  var raw = props.getProperty(CONFIG_KEY);
+
+  // a config already exists — anything not based on the current published copy
+  // (including a device that has never pulled) must be confirmed, not silently applied
+  if (raw && !req.force) {
+    var current = JSON.parse(raw);
+    if (req.basedOn !== current.publishedAt) {
+      return { ok: false, conflict: true, publishedAt: current.publishedAt,
+        error: 'Another manager published at ' + current.publishedAt + '. Reload to see their changes, or publish again to override.' };
+    }
+  }
+
   var payload = { config: req.config, publishedAt: stamp() };
-  PropertiesService.getScriptProperties().setProperty(CONFIG_KEY, JSON.stringify(payload));
+  delete payload.config.pin; // the PIN is stored separately, never published
+  props.setProperty(CONFIG_KEY, JSON.stringify(payload));
   return { ok: true, publishedAt: payload.publishedAt };
 }
 

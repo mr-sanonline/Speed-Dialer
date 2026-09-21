@@ -46,7 +46,7 @@ Leave `Caller` blank. The script distributes unassigned rows evenly across that 
 2. Paste the `/exec` URL into **Google sheet connection**, and your token into **Access token** below it.
 3. Tap **Test & set up tabs**. This creates the **Leads** and **Call Log** tabs with every column in the right order.
 4. The note under the field should read "Connected". If it says "Unauthorised", the token doesn't match the script.
-5. **Change the manager PIN** in Settings → Manager PIN. Until you do, the default `1947` works and anyone with the link can open your dashboard.
+5. **Change the manager PIN** in Settings → Manager PIN: enter the current PIN (`1947` the first time) and a new 4–6 digit one, then tap **Change PIN**. It is stored inside the Apps Script, never on anyone's phone, and takes effect on every device immediately — no publishing needed.
 
 Each team member pastes the same URL + token once, on their own phone.
 
@@ -74,9 +74,17 @@ Add or remove members in the app's Settings → Team members, in the form `Name 
 
 Each team can have its own simple sheet with just **Name** and **Phone** — no call fields, nothing to break. The master pulls from them and keeps every call detail in one place.
 
-1. Create one spreadsheet per vertical, e.g. *Leads — Farm land*. First row: `Name`, `Phone`. Add rows below.
+1. Create one spreadsheet per vertical, e.g. *Leads — Farm land*. Row 1 must have a **Name** column and a **Phone** column; any other columns are ignored, and their order doesn't matter.
+
+   The match is forgiving and case-insensitive, and ignores spaces, dots and punctuation:
+
+   | Works as the name column | Works as the phone column |
+   |---|---|
+   | `Name`, `Cus Name`, `Customer Name`, `Lead Name`, `Client name` | `Phone`, `Ph`, `Ph.No`, `Phone Number`, `Mobile`, `Mob`, `Mobile No`, `Contact`, `Contact No`, `Cell`, `Tel`, `Number`, `WhatsApp` |
+
+   Anything containing "name" is taken as the name; the first column that looks like a phone is taken as the phone. A two-column sheet with no usable headers is read as name-then-phone. The **file name doesn't matter at all**; only the URL you paste does.
 2. **Share each one with your own Google account** (the account that owns the script) — at least Viewer.
-3. In the master, open the **Sources** tab. It already lists the five verticals. Paste each spreadsheet's URL into **Source spreadsheet URL**, and its tab name into **Tab name** (`Sheet1` unless you renamed it).
+3. In the master, open the **Sources** tab. It already lists the five verticals. Paste each spreadsheet's URL into **Source spreadsheet URL**. **Tab name** is optional — leave it blank or put anything; if the name doesn't match, the script reads the first tab in that file.
 4. In the app: manager Settings → **Pull new leads now**.
 
 Every new phone number is appended to the master's `Leads` tab with its vertical set, then distributed to that team's callers. Numbers already in the master are skipped, so you can re-run it any time and nothing is duplicated or overwritten.
@@ -110,6 +118,12 @@ Each phone picks it up when it next opens the app, and again every five minutes 
 
 Note this does **not** rewrite the `Caller` column for leads already assigned under the old spelling. Fix those in the sheet with Find and replace (Ctrl+H) on the `Caller` column, or leave them — the dashboard will list both spellings until you do.
 
+## More than one manager
+
+The PIN is the same for everyone, and several managers can be signed in at the same time on different devices. The dashboard is read-only, so there is no conflict in viewing it.
+
+Settings is the one place to be careful. If two managers edit the roster at once, the app will stop the second publish with *"Another manager published at …"* rather than silently discarding the first person's work. Reload the app to pick up their changes and redo yours, or tap Publish a second time to deliberately override.
+
 ## Troubleshooting
 
 **"Blocked by Google" when you tap Test**
@@ -135,4 +149,4 @@ The web app must be deployed as "Anyone" (that's how a browser can reach it with
 - Treat the token like a password. Share it with the team directly, not in a public place.
 - If it leaks, change `API_TOKEN` in the script, redeploy, and update the token in each phone's Settings.
 
-Also change the manager PIN from the default `1947` (Settings → Manager PIN). The app URL is public, so the PIN is the only thing between a stranger and your dashboard.
+Also change the manager PIN from the default `1947` (Settings → Manager PIN). The app URL is public, so the PIN is the only thing between a stranger and your dashboard. It is held in the script and checked there, so it is never stored on a caller's phone.
