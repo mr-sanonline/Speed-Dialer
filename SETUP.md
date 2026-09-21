@@ -85,6 +85,17 @@ The `Rows imported` and `Last imported` columns on the Sources tab tell you what
 
 **To make it automatic:** in Apps Script, pick `installHourlyImport` from the function dropdown and press Run once. New leads then appear hourly without anyone tapping anything.
 
+## Changing names, lists or the target after rollout
+
+Every phone keeps its own copy of the roster and dropdown lists so the app works offline. So a change you make in Settings is local until you push it:
+
+1. Manager Settings → make the change (tap a name to rename it, × to remove, Add to append).
+2. Scroll to **Send changes to the team** → **Publish to all phones**.
+
+Each phone picks it up when it next opens the app, and again every five minutes while open. If you rename someone who is currently signed in on that phone, they're returned to the name-pick screen so they choose the corrected name.
+
+Note this does **not** rewrite the `Caller` column for leads already assigned under the old spelling. Fix those in the sheet with Find and replace (Ctrl+H) on the `Caller` column, or leave them — the dashboard will list both spellings until you do.
+
 ## Troubleshooting
 
 **"Blocked by Google" when you tap Test**

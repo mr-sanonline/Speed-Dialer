@@ -278,6 +278,9 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
             </sc-for>
           </div>
           <button onClick="{{ onEndShift }}" style="width:100%;margin-top:26px;padding:17px;border:1px solid rgba(0,0,0,.2);background:transparent;border-radius:11px;font-size:16px;font-weight:600">End shift &amp; sync sheet</button>
+          <div style="height:1px;background:rgba(0,0,0,.1);margin:24px 0 16px"></div>
+          <div style="font-size:12.5px;opacity:.5;line-height:1.45">{{ switchNote }}</div>
+          <button onClick="{{ onSwitchCaller }}" style="width:100%;margin-top:12px;padding:16px;border:1px solid rgba(0,0,0,.2);background:transparent;border-radius:11px;font-size:15.5px;font-weight:600">Sign out</button>
         </div>
       </sc-if>
 
@@ -380,12 +383,23 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
                 <div style="font-size:10px;font-weight:700;letter-spacing:.8px;opacity:.45;margin-bottom:10px">{{ g.title }}</div>
                 <div style="display:flex;flex-wrap:wrap;gap:7px">
                   <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4">
-                    <div style="display:flex;align-items:center;gap:7px;padding:9px 11px;background:#FAF8F4;border-radius:8px;font-size:14px;font-weight:500;max-width:100%;min-width:0">
-                      <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.label }}</span>
-                      <button onClick="{{ it.onRemove }}" style="flex:none;border:none;background:transparent;padding:0;font-size:15px;opacity:.4;line-height:1">×</button>
-                    </div>
+                    <sc-if value="{{ it.notEditing }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;align-items:center;gap:7px;padding:9px 11px;background:#FAF8F4;border-radius:8px;font-size:14px;font-weight:500;max-width:100%;min-width:0">
+                        <span onClick="{{ it.onEdit }}" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:text">{{ it.label }}</span>
+                        <button onClick="{{ it.onRemove }}" style="flex:none;border:none;background:transparent;padding:0;font-size:15px;opacity:.4;line-height:1">×</button>
+                      </div>
+                    </sc-if>
                   </sc-for>
                 </div>
+                <sc-if value="{{ g.isEditing }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:10px;padding:11px;background:#FAF8F4;border:1px solid #0B6E3F;border-radius:9px">
+                    <input value="{{ g.editValue }}" onChange="{{ g.onEditChange }}" style="width:100%;padding:11px;border:1px solid rgba(0,0,0,.17);border-radius:8px;font-size:15px;background:#FAF8F4;box-sizing:border-box">
+                    <div style="display:flex;gap:7px;margin-top:9px">
+                      <button onClick="{{ g.onEditSave }}" style="flex:1;padding:11px;border:none;border-radius:8px;background:#0B6E3F;color:#FAF8F4;font-size:14.5px;font-weight:600">Save name</button>
+                      <button onClick="{{ g.onEditCancel }}" style="flex:none;padding:11px 14px;border:1px solid rgba(0,0,0,.2);border-radius:8px;background:transparent;font-size:14.5px;font-weight:600">Cancel</button>
+                    </div>
+                  </div>
+                </sc-if>
                 <div style="display:flex;gap:7px;margin-top:11px">
                   <input value="{{ g.draft }}" onChange="{{ g.onDraft }}" placeholder="{{ g.placeholder }}" style="flex:1;min-width:0;padding:11px;border:1px solid rgba(0,0,0,.17);border-radius:8px;font-size:14.5px;background:#FAF8F4;box-sizing:border-box">
                   <button onClick="{{ g.onAdd }}" style="flex:none;padding:11px 14px;border:none;border-radius:8px;background:#141414;color:#FAF8F4;font-size:14px;font-weight:600">Add</button>
@@ -393,7 +407,12 @@ Visiting on Sunday" style="width:100%;padding:13px;border:1px solid rgba(0,0,0,.
               </div>
             </sc-for>
           </div>
-          <button onClick="{{ onSignOut }}" style="width:100%;margin-top:22px;padding:16px;border:1px solid rgba(0,0,0,.2);background:transparent;border-radius:11px;font-size:15.5px;font-weight:600">Sign out</button>
+          <div style="background:#141414;color:#FAF8F4;border-radius:13px;padding:16px;margin-top:22px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.8px;opacity:.6;margin-bottom:8px">SEND CHANGES TO THE TEAM</div>
+            <button onClick="{{ onPublish }}" style="{{ publishStyle }}">Publish to all phones</button>
+            <div style="font-size:12px;opacity:.65;line-height:1.45;margin-top:9px">{{ publishNote }}</div>
+          </div>
+          <button onClick="{{ onSignOut }}" style="width:100%;margin-top:16px;padding:16px;border:1px solid rgba(0,0,0,.2);background:transparent;border-radius:11px;font-size:15.5px;font-weight:600">Sign out</button>
         </div>
       </sc-if>
 
@@ -453,7 +472,8 @@ class Component extends DCLogic {
     pin: "", pinError: false, sheetUrl: "", vertical: "Pre-launch",
     query: "", filter: "Uncalled", open: -1, pendingOutcome: null,
     queue: [], syncing: false, syncError: null, lastSync: null,
-    pickedVertical: null, pinOpen: false, testState: null, importState: null,
+    pickedVertical: null, pinOpen: false, testState: null, importState: null, editing: null,
+    publishState: null, publishedAt: null, dirty: false,
     loading: false, online: true, metrics: null,
     leads: LEAD_SEED.map(([name, phone], i) => ({
       name, phone,
@@ -544,7 +564,7 @@ class Component extends DCLogic {
   enqueue(lead) {
     const item = {
       id: lead.id, phone: lead.phone, outcome: lead.outcome,
-      dialed: !!lead.dialed, f: lead.f
+      dialed: !!lead.dialed, f: lead.f, caller: this.state.caller
     };
     this.setState(s => ({
       queue: s.queue.filter(q => q.id !== item.id).concat([item])
@@ -552,16 +572,48 @@ class Component extends DCLogic {
   }
 
   flush() {
-    const { queue, settings, caller, syncing } = this.state;
+    const { queue, settings, syncing } = this.state;
     if (syncing || !queue.length || !settings.scriptUrl || !navigator.onLine) return;
-    const batch = queue.slice(0, 20);
+    // one batch per originating caller, so a sign-out can never re-attribute saves
+    const owner = queue[0].caller || this.state.caller;
+    const batch = queue.filter(q => (q.caller || this.state.caller) === owner).slice(0, 20);
     this.setState({ syncing: true, syncError: null });
-    this.api("save", { caller, items: batch })
+    this.api("save", { caller: owner, items: batch })
       .then(() => this.setState(s => ({
         syncing: false, lastSync: new Date(),
         queue: s.queue.filter(q => !batch.some(b => b.id === q.id))
       }), () => { if (this.state.queue.length) this.flush(); }))
       .catch(e => this.setState({ syncing: false, syncError: e.message }));
+  }
+
+  SHARED = ["team", "verticals", "ptypes", "budgets", "outcomes", "langs", "templates", "projects"];
+
+  pullConfig() {
+    if (!this.state.settings.scriptUrl) return;
+    // never clobber edits the manager hasn't published yet
+    if (this.state.dirty) return;
+    this.api("config", {}).then(j => {
+      if (!j.config) return;
+      if (this.state.dirty) return;
+      this.setState(s => {
+        const next = Object.assign({}, s.settings);
+        this.SHARED.forEach(k => { if (Array.isArray(j.config[k])) next[k] = j.config[k]; });
+        const stale = !s.isManager && s.caller && Array.isArray(j.config.team) &&
+          !j.config.team.map(parseMember).some(m => m.name === s.caller);
+        return {
+          settings: next,
+          target: j.config.target || s.target,
+          publishedAt: j.publishedAt,
+          caller: stale ? null : s.caller,
+          screen: stale ? "onboard" : s.screen,
+          pickedVertical: stale ? null : s.pickedVertical
+        };
+      });
+    }).catch(() => {});
+  }
+
+  touchSettings(patch) {
+    this.setState(s => Object.assign({ dirty: true }, patch(s)));
   }
 
   loadMetrics(force) {
@@ -584,6 +636,7 @@ class Component extends DCLogic {
           tab: s.tab || prev.tab, target: s.target || prev.target,
           leads: Array.isArray(s.leads) && s.leads.length ? s.leads : prev.leads,
           queue: Array.isArray(s.queue) ? s.queue : prev.queue,
+          dirty: !!s.dirty, publishedAt: s.publishedAt || prev.publishedAt,
           settings: s.settings ? Object.assign({}, prev.settings, s.settings) : prev.settings
         }));
       }
@@ -592,15 +645,16 @@ class Component extends DCLogic {
     const sync = () => this.setState({ online: navigator.onLine }, () => this.flush());
     window.addEventListener("online", sync);
     window.addEventListener("offline", sync);
-    this.setState({ online: navigator.onLine }, () => this.flush());
+    this.setState({ online: navigator.onLine }, () => { this.flush(); this.pullConfig(); });
     this.timer = setInterval(() => this.flush(), 20000);
+    this.configTimer = setInterval(() => this.pullConfig(), 300000);
   }
-  componentWillUnmount() { clearInterval(this.timer); }
+  componentWillUnmount() { clearInterval(this.timer); clearInterval(this.configTimer); }
   persist() {
     if (!this.hydrated) return;
     try {
-      const { screen, tab, caller, isManager, vertical, leads, target, settings, queue } = this.state;
-      localStorage.setItem(this.KEY, JSON.stringify({ screen, tab, caller, isManager, vertical, leads, target, settings, queue }));
+      const { screen, tab, caller, isManager, vertical, leads, target, settings, queue, dirty, publishedAt } = this.state;
+      localStorage.setItem(this.KEY, JSON.stringify({ screen, tab, caller, isManager, vertical, leads, target, settings, queue, dirty, publishedAt }));
     } catch (e) {}
   }
   componentDidUpdate() {
@@ -656,7 +710,7 @@ class Component extends DCLogic {
         : []);
 
     const groupDefs = [
-      ["team", "TEAM MEMBERS", "Add a caller"],
+      ["team", "TEAM MEMBERS — TAP A NAME TO RENAME", "Add a caller, e.g. Rahul (Farm land)"],
       ["verticals", "VERTICALS", "Add a vertical"],
       ["ptypes", "PROPERTY TYPE OPTIONS", "Add a property type"],
       ["budgets", "BUDGET BANDS", "Add a band"],
@@ -895,7 +949,10 @@ class Component extends DCLogic {
       ],
 
       targetInput: String(S.target),
-      onTargetChange: (e) => set({ target: parseInt(e.target.value.replace(/\D/g, ""), 10) || 0 }),
+      onTargetChange: (e) => set({
+        target: parseInt(e.target.value.replace(/\D/g, ""), 10) || 0,
+        dirty: true, publishState: null
+      }),
       settingGroups: groupDefs.map(([key, title, placeholder]) => ({
         title, placeholder,
         draft: S.drafts[key] || "",
@@ -903,17 +960,38 @@ class Component extends DCLogic {
         onAdd: () => {
           const v = (S.drafts[key] || "").trim();
           if (!v) return;
-          this.setState(s => ({
+          this.touchSettings(s => ({
             settings: Object.assign({}, s.settings, { [key]: s.settings[key].concat([v]) }),
-            drafts: Object.assign({}, s.drafts, { [key]: "" })
+            drafts: Object.assign({}, s.drafts, { [key]: "" }),
+            publishState: null
           }));
         },
         items: S.settings[key].map((label, idx) => ({
           label,
-          onRemove: () => this.setState(s => ({
-            settings: Object.assign({}, s.settings, { [key]: s.settings[key].filter((_, k) => k !== idx) })
+          editing: S.editing && S.editing.key === key && S.editing.idx === idx,
+          notEditing: !(S.editing && S.editing.key === key && S.editing.idx === idx),
+          onEdit: () => set({ editing: { key, idx, value: label } }),
+          onRemove: () => this.touchSettings(s => ({
+            settings: Object.assign({}, s.settings, { [key]: s.settings[key].filter((_, k) => k !== idx) }),
+            editing: null, publishState: null
           }))
-        }))
+        })),
+        isEditing: !!(S.editing && S.editing.key === key),
+        editValue: S.editing && S.editing.key === key ? S.editing.value : "",
+        onEditChange: (e) => set({ editing: Object.assign({}, S.editing, { value: e.target.value }) }),
+        onEditSave: () => {
+          const ed = S.editing;
+          if (!ed) return;
+          const v = ed.value.trim();
+          if (!v) { set({ editing: null }); return; }
+          this.touchSettings(s => ({
+            settings: Object.assign({}, s.settings, {
+              [ed.key]: s.settings[ed.key].map((x, k) => k === ed.idx ? v : x)
+            }),
+            editing: null, publishState: null
+          }));
+        },
+        onEditCancel: () => set({ editing: null })
       })),
       scriptUrlValue: S.settings.scriptUrl,
       onScriptUrl: (e) => {
@@ -962,12 +1040,39 @@ class Component extends DCLogic {
           })
           .catch(e => set({ importState: "✕ " + e.message }));
       },
+      publishNote: S.publishState === "running" ? "Publishing…"
+        : S.publishState || (S.dirty
+          ? "You have unpublished changes — the team still sees the old names."
+          : S.publishedAt
+            ? "Team is up to date · published " + S.publishedAt
+            : "Renames and list changes stay on this phone until you publish them."),
+      publishStyle: "width:100%;padding:14px;border:none;border-radius:9px;font-size:15px;font-weight:700;" +
+        (S.dirty ? "background:#FAF8F4;color:#141414" : "background:rgba(250,248,244,.22);color:#FAF8F4"),
+      onPublish: () => {
+        if (!S.settings.scriptUrl) { set({ publishState: "Connect a sheet first" }); return; }
+        const config = { target: S.target };
+        this.SHARED.forEach(k => { config[k] = S.settings[k]; });
+        set({ publishState: "running" });
+        this.api("publish", { config })
+          .then(j => set({
+            publishState: "✓ Sent to the team · " + j.publishedAt,
+            publishedAt: j.publishedAt, dirty: false
+          }))
+          .catch(e => set({ publishState: "✕ " + e.message }));
+      },
       onOpenSettings: () => set({ tab: "settings" }),
       onCloseSettings: () => set({ tab: "manager" }),
-      onSignOut: () => {
-        try { localStorage.removeItem(this.KEY); localStorage.removeItem("speedDialer.v1"); } catch (e) {}
-        set({ screen: "onboard", caller: null, isManager: false, tab: "leads", sheetUrl: "", pickedVertical: null, pinOpen: false });
-      },
+      onSignOut: () => set({
+        screen: "onboard", caller: null, isManager: false, tab: "leads",
+        pickedVertical: null, pinOpen: false, pin: "", leads: [], metrics: null
+      }),
+      switchNote: S.queue.length
+        ? S.queue.length + " save" + (S.queue.length === 1 ? "" : "s") + " still syncing — wait for the green dot first"
+        : "Signed in as " + (S.caller || "") + " · the sheet connection stays set up on this phone",
+      onSwitchCaller: () => set({
+        screen: "onboard", caller: null, tab: "leads", isManager: false,
+        pin: "", pinOpen: false, pickedVertical: null, leads: [], metrics: null
+      }),
 
       tabs: (S.isManager
         ? [["leads", "Leads"], ["today", "Today"], ["manager", "Team"], ["settings", "Settings"]]
