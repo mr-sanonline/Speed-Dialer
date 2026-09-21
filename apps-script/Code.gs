@@ -56,6 +56,8 @@ function handle(req) {
       case 'leads':    out = getLeads(req); break;
       case 'save':     out = saveLeads(req); break;
       case 'metrics':  out = getMetrics(req); break;
+      case 'config':   out = getConfig(req); break;
+      case 'publish':  out = publishConfig(req); break;
       case 'import':   out = importLeads(req); break;
       case 'reassign': out = reassign(req); break;
       case 'setup':    out = ensureSheets(); break;
@@ -104,6 +106,26 @@ function ensureSheets() {
   }
 
   return { ok: true, columns: COLS };
+}
+
+/* ---------- shared config (roster, dropdowns, target) ---------- */
+
+var CONFIG_KEY = 'speedDialerConfig';
+
+/** action=config — every phone calls this on open and adopts what the manager published. */
+function getConfig(req) {
+  var raw = PropertiesService.getScriptProperties().getProperty(CONFIG_KEY);
+  if (!raw) return { ok: true, config: null, publishedAt: null };
+  var saved = JSON.parse(raw);
+  return { ok: true, config: saved.config, publishedAt: saved.publishedAt };
+}
+
+/** action=publish { config } — manager pushes the roster and dropdown lists to all phones. */
+function publishConfig(req) {
+  if (!req.config) return { ok: false, error: 'No config supplied' };
+  var payload = { config: req.config, publishedAt: stamp() };
+  PropertiesService.getScriptProperties().setProperty(CONFIG_KEY, JSON.stringify(payload));
+  return { ok: true, publishedAt: payload.publishedAt };
 }
 
 /* ---------- pulling leads in from per-vertical source sheets ---------- */
