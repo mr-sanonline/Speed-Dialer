@@ -345,7 +345,10 @@ function getLeads(req) {
       });
       rows.forEach(function (r, i) {
         var rowVertical = String(r[m['Vertical']] || '').trim();
-        if (vertical && rowVertical && rowVertical.toLowerCase() !== vertical.toLowerCase()) return;
+        // only distribute rows that belong to this vertical; a blank Vertical is
+        // never guessed at, so an untagged lead can't leak into the wrong team
+        if (!rowVertical) return;
+        if (vertical && rowVertical.toLowerCase() !== vertical.toLowerCase()) return;
         if (String(r[m['Caller']] || '').trim()) return;
         var pick = roster[0];
         roster.forEach(function (n) { if (load[n] < load[pick]) pick = n; });
