@@ -85,6 +85,20 @@ The `Rows imported` and `Last imported` columns on the Sources tab tell you what
 
 **To make it automatic:** in Apps Script, pick `installHourlyImport` from the function dropdown and press Run once. New leads then appear hourly without anyone tapping anything.
 
+## Adding, removing or renaming team members
+
+No code changes, ever. In the app:
+
+1. Manager PIN → **Settings** → **Team members**.
+2. **Add** — type the name with its vertical in brackets, e.g. `Rahul (Farm land)`, then tap Add.
+   **Rename** — tap the name, correct it, Save.
+   **Remove** — tap the × on their chip.
+3. **Publish to all phones.**
+
+Every phone picks the new roster up when it next opens, and again every five minutes while open. The new person signs in by tapping their team, then their name — nothing else to set up on their device except the sheet URL and token.
+
+Removing someone does not delete their work, and their assigned-but-uncalled leads stay under their name in the sheet. To hand those over, edit the `Caller` column in the master, or use Find and replace (Ctrl+H) to swap their name for someone else's.
+
 ## Changing names, lists or the target after rollout
 
 Every phone keeps its own copy of the roster and dropdown lists so the app works offline. So a change you make in Settings is local until you push it:

@@ -453,8 +453,9 @@ const TEAM = [
   "Priyanka (Farm land)","Chaitra (Farm land)",
   "Kavya (Pre-launch)","Sujan (Pre-launch)","Kaushik (Pre-launch)",
   "Deepika (Mandate plotted)","Kushal (Mandate plotted)","Anitha (Mandate plotted)","Harish (Mandate plotted)",
-  "Sania (Primary market)","Imram (Primary market)"
+  "Saniya (Primary market)","Imran (Primary market)"
 ];
+const ROSTER_VERSION = 2;
 const parseMember = (entry) => {
   const m = /^(.*?)\s*\((.*)\)\s*$/.exec(entry);
   return m ? { name: m[1], vertical: m[2] } : { name: entry, vertical: "" };
@@ -473,7 +474,7 @@ class Component extends DCLogic {
     query: "", filter: "Uncalled", open: -1, pendingOutcome: null,
     queue: [], syncing: false, syncError: null, lastSync: null,
     pickedVertical: null, pinOpen: false, testState: null, importState: null, editing: null,
-    publishState: null, publishedAt: null, dirty: false,
+    publishState: null, publishedAt: null, dirty: false, rosterVersion: ROSTER_VERSION,
     loading: false, online: true, metrics: null,
     leads: LEAD_SEED.map(([name, phone], i) => ({
       name, phone,
@@ -637,7 +638,15 @@ class Component extends DCLogic {
           leads: Array.isArray(s.leads) && s.leads.length ? s.leads : prev.leads,
           queue: Array.isArray(s.queue) ? s.queue : prev.queue,
           dirty: !!s.dirty, publishedAt: s.publishedAt || prev.publishedAt,
-          settings: s.settings ? Object.assign({}, prev.settings, s.settings) : prev.settings
+          settings: s.settings
+            ? Object.assign({}, prev.settings, s.settings,
+                // a build with corrected spellings wins over the stored copy, once
+                // a build with corrected spellings wins over the stored copy once —
+                // but never over a roster the manager has published or is still editing
+                (s.rosterVersion || 1) < ROSTER_VERSION && !s.publishedAt && !s.dirty
+                  ? { team: TEAM.slice() } : {})
+            : prev.settings,
+          rosterVersion: ROSTER_VERSION
         }));
       }
     } catch (e) {}
@@ -654,7 +663,7 @@ class Component extends DCLogic {
     if (!this.hydrated) return;
     try {
       const { screen, tab, caller, isManager, vertical, leads, target, settings, queue, dirty, publishedAt } = this.state;
-      localStorage.setItem(this.KEY, JSON.stringify({ screen, tab, caller, isManager, vertical, leads, target, settings, queue, dirty, publishedAt }));
+      localStorage.setItem(this.KEY, JSON.stringify({ screen, tab, caller, isManager, vertical, leads, target, settings, queue, dirty, publishedAt, rosterVersion: ROSTER_VERSION }));
     } catch (e) {}
   }
   componentDidUpdate() {
